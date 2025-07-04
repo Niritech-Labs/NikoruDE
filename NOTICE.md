@@ -4,7 +4,7 @@ This project includes third-party software components governed by the following 
 - **License:** BSD 3-Clause License
 - **Source Code:** https://github.com/hyprwm/Hyprland
 - **Copyright Notice:**  
-  Copyright (c) 2022, vaxerski  
+  Copyright (c) 2022-2024, vaxerski
   All rights reserved.
 
 ## 2. PySide6 (Qt for Python)
