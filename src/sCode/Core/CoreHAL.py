@@ -191,9 +191,8 @@ class HyprAL:
         self.hyprctl = HyprSocketCtl(SOCK)
         self.hyprEvent = HyprSocketEvent(SOCK2)
 
-        #self.hyprctl.start()
 
-        self.config = self.LoadConfig()
+        
 
         
         
@@ -202,25 +201,6 @@ class HyprAL:
     def GetClients(self):
         return json.loads(self.hyprctl.send(b"j/clients",waitAnswer=True))
           
-    def LoadConfig(self):
-        try:
-            with open(self.configPath, 'r', encoding='utf-8') as file:
-                return json.load(file)
-        except:
-            if(self.debug): print("can't load config,creatig new")
-            defconf = {"exclude_path":"~/.nira_desktop/setup.pyc",
-                       "exclude_class":"NGUI,System",
-                       "debug":False}
-            self.SaveConfig(defconf)
-            return defconf
-
-    def SaveConfig(self,configD):
-        if not self.configPath.exists(): self.configPath.parent.mkdir(parents=True,exist_ok=True)
-        with open(self.configPath, 'w', encoding='utf-8') as file:
-            json.dump(configD, file, ensure_ascii=False, indent=4)
-
-    
-
     def _getClientPath(self,pid):
         try: return os.readlink(f'/proc/{pid}/exe')
         except Exception as e: print('\033[33mGet path error:\033[0m',e); return None
