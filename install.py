@@ -18,6 +18,7 @@ def Copy():
         shutil.copytree(image,'/usr/share/NikoruDE/Image')
         shutil.copytree(other,'/usr/share/NikoruDE/Other')
         shutil.copytree(code,'/usr/share/NikoruDE/Code')
+        shutil.rmtree('/usr/share/NikoruDE/Code/modules')
         print(f"state: [{G}OK{S}]")
     except Exception as e:
         print(R+str(e)+S)
@@ -37,15 +38,21 @@ def Remove():
             print(f"state: [{G}SKIP{S}]")
 
 
-def RunProc(process,cwd = None):
+def RunProc(process,cwd = None,skiperror = False):
     result = subprocess.run(process,capture_output=True,text=True,cwd=cwd)
     if result.stderr == None or result.returncode == 0:
         print(G+result.stdout+S)
         print(Y+result.stderr+S)
         print(f"state: [{G}OK{S}]")
     else:
-        print(R+result.stderr+S)
-        print(f"state: [{Y}SKIP{S}]")
+        if skiperror:
+            print(R+result.stderr+S)
+            print(f"state: [{Y}SKIP{S}]")
+        else:
+            print(R+result.stderr+S)
+            print(f"state: [{R}ERR{S}]")
+            exit(1)
+        
         
 
         
@@ -54,5 +61,7 @@ print(f"{B}-------------- Stage 1: Removing old App data ---------------{S}")
 Remove()
 print(f"{B}-------------- Stage 2: Copy App to device ------------------{S}")
 Copy()
-print(f"{B}-------------- Stage 3: Restore Context ---------------------{S}")
-RunProc(['sudo','restorecon','-R','-v','/usr/share/NikoruDE'])
+print(f"{B}-------------- Stage 3: Build Utils -------------------------{S}")
+RunProc(['sudo','/bin/python',f'{code}/modules/setup.py','build_ext',f'--build-lib=/usr/share/NikoruDE/Code/Utils'])
+print(f"{B}-------------- Stage 4: Restore Context ---------------------{S}")
+RunProc(['sudo','restorecon','-R','-v','/usr/share/NikoruDE'],skiperror=True)
