@@ -28,7 +28,8 @@ sudo python3 uninstall.py
 - PySide6 
 - NetworkManager 
 - ModemManager 
-
+- libdrm ≥ 2.4.123 включая devel пакет
+  
 ---
 
 # EN
@@ -60,4 +61,5 @@ sudo python3 uninstall.py
 - PySide6 
 - NetworkManager 
 - ModemManager
+- libdrm ≥ 2.4.123 include devel package
 
