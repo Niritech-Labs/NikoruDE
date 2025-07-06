@@ -14,7 +14,8 @@ Nikoru Desktop Environment это open-source окружение рабочег�
 чтобы установить DE выполните: 
 ```bash
 git clone https://github.com/Niritech-Labs/NikoruDE.git
-cd NikoruDE 
+cd NikoruDE
+sudo pip install pybind11 
 sudo python3 install.py
 ```
 чтобы удалить выполните 
@@ -47,7 +48,8 @@ This software is distributed under the [GPL-3.0](LICENSE) license.
 to install DE run: 
 ```bash
 git clone https://github.com/Niritech-Labs/NikoruDE.git
-cd NikoruDE 
+cd NikoruDE
+sudo pip install pybind11  
 sudo python3 install.py
 ```
 to uninstall run 
