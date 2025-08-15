@@ -11,17 +11,22 @@ from Core.NLUtils import ConfigManager
 import json
 import subprocess
 from pathlib import Path
+from Core.NLUtils import NLLogger,ConColors
+
 
 
 class DockScrollClientArea(QWidget):
-    def __init__(self, parent=None):
+    def __init__(self, parent,Theme: dict):
         super().__init__(parent)
+        self.Logger = NLLogger(False,"ClientArea")
+        self.Logger.Info("started",ConColors.B,False)
         self.scrollArea = QScrollArea()
         self.setFixedHeight(40)
         self.scrollArea.setWidgetResizable(True)
         self.scrollArea.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.scrollArea.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         
+        self.Theme = Theme
         self.content_widget = QWidget()
         self.clientsLayout = QHBoxLayout(self.content_widget)
         self.clientsLayout.setContentsMargins(0, 0, 0, 0)
@@ -31,14 +36,8 @@ class DockScrollClientArea(QWidget):
         self.main_layout = QHBoxLayout(self)
         self.main_layout.addWidget(self.scrollArea)
         self.main_layout.setContentsMargins(0, 0, 0, 0)
-
-        self.setStyleSheet("""
-                QWidget {
-                    background: #2d2d2d;
-                    border: 0px solid #505050;
-                    border-radius: 4px;
-                }
-            """)
+        self.setStyleSheet(self.Theme["ClientArea"])
+        
 
         # Инициализация спейсеров
         self.left_spacer = QSpacerItem(0, 0, QSizePolicy.Expanding, QSizePolicy.Minimum)
@@ -70,13 +69,14 @@ class DockScrollClientArea(QWidget):
 
 class DockSettings(QPushButton):
     """Кнопка с отображением времени и даты"""
-    def __init__(self, parent=None,size = [30,40],theme="dark"):
+    def __init__(self, parent,size:list,Theme: dict):
         super().__init__(parent)
-        if theme == 'dark': self.theme = 'L'
-        else: self.theme = 'D'
+        self.Theme = Theme
         SX,SY = size
+        self.Logger = NLLogger(False,"DockSettings")
+        self.Logger.Info("started",ConColors.B,False)
         self.setFixedSize(SX,SY)
-        self.setIcon(QIcon(f"/usr/share/NikoruDE/Image/Dock/icons/{self.theme}settings.svg"))
+        self.setIcon(QIcon(self.Theme["IconPath"]+"/settings.svg"))
         self.setIconSize(QSize(SX - 5, SX - 5))
         self.update()
         self.setAttribute(Qt.WA_AlwaysShowToolTips)  
@@ -85,19 +85,7 @@ class DockSettings(QPushButton):
         
     def update(self):
         self.setToolTip("Settings")
-        self.setStyleSheet("""
-            QPushButton {
-                background: #2d2d2d;
-                border: 0px solid #505050;
-                border-radius: 4px;
-                color: white;
-                font-size: 12px;
-            }
-            QPushButton:hover { 
-                background: #575757;
-            }
-            
-        """)
+        self.setStyleSheet(self.Theme["Overview"])
 
     def openMenu(self, pos):
         pass  
@@ -109,56 +97,34 @@ class DockSettings(QPushButton):
     
 class DockSVG(QPushButton):
     """отображение любого SVG"""
-    def __init__(self,icon, parent=None,size = [30,40],theme="dark"):
+    def __init__(self,icon, parent,size:list,Theme:dict):
         super().__init__(parent)
-        if theme == 'dark': self.theme = 'L'
-        else: self.theme = 'D'
+        self.Theme = Theme
         ico = icon
+        self.Logger = NLLogger(False,"DockSVG")
+        self.Logger.Info("started",ConColors.B,False)
         SX,SY = size
         self.setFixedSize(SX,SY)
-        self.setIcon(QIcon(f"/usr/share/NikoruDE/Image/Dock/icons/{self.theme+ico}.svg"))
+        self.setIcon(QIcon(self.Theme["IconPath"]+f"/{ico}.svg"))
         self.setIconSize(QSize(SX - 5, SX - 5))
-        self.setStyleSheet("""
-            QPushButton {
-                background: #2d2d2d;
-                border: 0px solid #505050;
-                border-radius: 4px;
-                color: white;
-                font-size: 12px;
-            }
-            QPushButton:hover { 
-                background: #575757;
-            }
-            
-        """)
+        self.setStyleSheet(self.Theme["Overview"])
 
 class DockTerminal(QPushButton):
     """Кнопка с отображением времени и даты"""
-    def __init__(self,HAL:HyprAL, parent=None,size = [30,40],theme="dark"):
+    def __init__(self,HAL:HyprAL, parent,size:list,Theme:dict):
         super().__init__(parent)
-        if theme == 'dark': self.theme = 'L'
-        else: self.theme = 'D'
+        self.Theme = Theme
         SX,SY = size
         self.HAL = HAL
+        self.Logger = NLLogger(False,"DockTerminal")
+        self.Logger.Info("started",ConColors.B,False)
         self.setFixedSize(SX,SY)
-        self.setIcon(QIcon(f"/usr/share/NikoruDE/Image/Dock/icons/{self.theme}terminal.svg"))
+        self.setIcon(QIcon(self.Theme["IconPath"]+"/terminal.svg"))
         self.setIconSize(QSize(SX - 5, SX - 5))
         self.clicked.connect(lambda: self.HAL.RunProcess('kitty'))
         self.setToolTip("Open terminal")
         self.setAttribute(Qt.WA_AlwaysShowToolTips)
-        self.setStyleSheet("""
-            QPushButton {
-                background: #2d2d2d;
-                border: 0px solid #505050;
-                border-radius: 4px;
-                color: white;
-                font-size: 12px;
-            }
-            QPushButton:hover { 
-                background: #575757;
-            }
-            
-        """)
+        self.setStyleSheet(self.Theme["Overview"])
     def event(self, e):
         if e.type() == QEvent.ToolTip:
             QToolTip.showText(self.mapToGlobal(QPoint(-5,-50)),self.toolTip(),self)
@@ -167,32 +133,22 @@ class DockTerminal(QPushButton):
     
 class DockInternet(QPushButton):
     """Панель управления интернетом"""
-    def __init__(self,IAL:InterAL, parent=None,size = [30,40],theme="dark"):
+    def __init__(self,IAL:InterAL, parent,size:list,Theme:dict):
         super().__init__(parent)
-        if theme == 'dark': self.theme = 'L'
-        else: self.theme = 'D'
+        self.Theme = Theme
         self.SX,self.SY = size
         self.IAL = IAL
+        self.Logger = NLLogger(False,"DockInternet")
+        self.Logger.Info("started",ConColors.B,False)
         self.status = ['noInternet','No connection']
         self.setFixedSize(self.SX,self.SY)
         self.clicked.connect(self.openInternetMenu)
         self.setAttribute(Qt.WA_AlwaysShowToolTips)
         self.update()
-        self.setStyleSheet("""
-            QPushButton {
-                background: #2d2d2d;
-                border: 0px solid #505050;
-                border-radius: 4px;
-                color: white;
-                font-size: 12px;
-            }
-            QPushButton:hover { 
-                background: #575757;
-            }
-            
-        """)
+        self.setStyleSheet(self.Theme["Overview"])
+        
     def update(self):
-        self.setIcon(QIcon(f"/usr/share/NikoruDE/Image/Dock/icons/{self.theme+self.status[0]}.svg"))
+        self.setIcon(QIcon(self.Theme["IconPath"]+f"/{self.status[0]}.svg"))
         self.setIconSize(QSize(self.SX - 5, self.SX - 5))
         self.setToolTip(self.status[1])
 
@@ -207,10 +163,13 @@ class DockInternet(QPushButton):
     
 class DockTime(QPushButton):
     """отображение времени и даты"""
-    def __init__(self, parent=None,size = [72,40],locale = QLocale.Russian):
+    def __init__(self, parent=None,size = [72,40],locale = QLocale.Russian,Theme = ''):
         super().__init__(parent)
         SX,SY = size
         self.localen = QLocale(locale)
+        self.Theme = Theme
+        self.Logger = NLLogger(False,"DockTime")
+        self.Logger.Info("started",ConColors.B,False)
         self.setFixedSize(SX,SY)
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.update_time)
@@ -225,18 +184,7 @@ class DockTime(QPushButton):
         self.setText(current_time.toString("HH:mm\n dd.MM.yyyy"))
         
         self.setToolTip(self.localen.toString(current_time,"d MMMM yyyy',' dddd"))
-        self.setStyleSheet("""
-            QPushButton {
-                background: #2d2d2d;
-                border: 0px solid #505050;
-                border-radius: 4px;
-                color: white;
-                font-size: 12px;
-            }
-            QPushButton:hover { 
-                background: #575757;
-            }
-        """)
+        self.setStyleSheet(self.Theme["Overview"])
 
     def openMenu(self, pos):
         pass  
@@ -249,23 +197,28 @@ class DockTime(QPushButton):
 class DockClient(QPushButton):
     """Графическая обёртка приложения для док панели"""
     destroing = Signal()
-    def __init__(self, HAL:HyprAL,title: str, icon: QIcon,IC: str, parent=None,pinned = False):
+    def __init__(self, HAL:HyprAL,title: str, icon: QIcon,IC: str, parent=None,pinned = False,Theme = {"Clients":''}):
         super().__init__(parent)
         self.HAL = HAL
+        
 
         #datas
         self.runned = {}
-        self.hidden = {}
+        self.visible = {}
 
-        self.pinned = pinned
+        self.lastClient = ''
+        self.Theme = Theme
+        self.pin = pinned
         self.ids = []
         self.title = title
         self.icond = icon
         self.IC = IC
-        self.clicked.connect(self.ToggleHide)
+        self.clicked.connect(self.LClick)
         self.setup_ui()
         self.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.customContextMenuRequested.connect(self.openMenu)
+        self.Logger = NLLogger(False,f"DockClient {self.title}")
+        self.Logger.Info("started",ConColors.B,False)
 
     def setup_ui(self):
         if self.HAL.debug: print(self.title)
@@ -273,24 +226,8 @@ class DockClient(QPushButton):
         self.setIconSize(QSize(38, 38))
         self.setFixedSize(40, 40) 
         self.setToolTip(self.title) #подсказка о названии приложения
-        self.setAttribute(Qt.WA_AlwaysShowToolTips)  
-        self.setStyleSheet("""
-                    QPushButton {
-                        background: #404040;
-                        border: 1px solid #505050;
-                        border-radius: 4px;
-                    }
-                    QPushButton:hover { 
-                        background: #575757;
-                    }
-                    QMenu  {
-                        color: #ffffff;
-                        background: #404040;
-                    }
-                    QMenu:hover  {
-                        color: #000000;
-                    }
-                           """)
+        self.setAttribute(Qt.WA_AlwaysShowToolTips)
+        self.setStyleSheet(self.Theme["Clients"])
     #подсказка о названии приложения
     def nameToltip(self):
         QToolTip.showText(self.mapToGlobal(self.rect().bottomLeft),self.title)
@@ -301,21 +238,54 @@ class DockClient(QPushButton):
         comand = subprocess.run(panel,capture_output=True,text=True,encoding='utf-8',errors='ignore')
         print(comand.stdout.strip())
         
-
-    def ToggleHide(self):
-        idW = json.loads(self.HAL.hyprctl.send(b'j/activeworkspace'))['id']
-        work = f'dispatch movetoworkspacesilent {idW},address:{self.ids[0]}'
-        hidden = f'dispatch movetoworkspacesilent 99,address:{self.ids[0]}'
-        if self.hidden:
+    def LClick(self):
+        print(self.visible,'u')
+        if self.ids == [] and self.pin:
+            self.run()
+        if not self.visible == {}:
+            for ID in self.visible:
+                value = self.visible[ID]
+                if value == False:
+                    self.HideManager(True,ID)
+                    self.lastClient = ID
+                    print(self.visible,'ud')
+                    return
+            if self.lastClient == '':
+                self.lastClient = self.ids[0]
+            self.HideManager(False,self.lastClient)
+            print('hide')
+            print(self.visible,'d')
+        
+ 
             
-            print(self.HAL.hyprctl.send(bytes(work,'utf-8'),waitAnswer=True))
+    def run():
+        pass
+
+    def HideManager(self,visible:bool,id:str):
+        idActiveWorkspace = json.loads(self.HAL.hyprctl.send(b'j/activeworkspace'))['id']
+        unhide = f'dispatch movetoworkspacesilent {idActiveWorkspace},address:{id}'
+        hide = f'dispatch movetoworkspacesilent 99,address:{id}'
+        setActive = f'dispatch focuswindow address:{id}'
+        if visible:
+            self.HAL.hyprctl.send(bytes(unhide,'utf-8'))
+            self.HAL.hyprctl.send(bytes(setActive,'utf-8'))
         else:
-            print(self.HAL.hyprctl.send(bytes(hidden,'utf-8'),waitAnswer=True))
-        self.hidden = not self.hidden
+            self.HAL.hyprctl.send(bytes(hide,'utf-8'))
+
+    def HideManagerAll(self,visible:bool):
+        idActiveWorkspace = json.loads(self.HAL.hyprctl.send(b'j/activeworkspace'))['id']
+        for ID in self.visible:
+            unhide = f'dispatch movetoworkspacesilent {idActiveWorkspace},address:{ID}'
+            hide = f'dispatch movetoworkspacesilent 99,address:{ID}'
+            if visible:
+                self.HAL.hyprctl.send(bytes(unhide,'utf-8'))
+            else:
+                self.HAL.hyprctl.send(bytes(hide,'utf-8'))
+
     def delete(self):
         self.setParent(None)
         self.ids = []
-        self.hidden = {}
+        self.visible = {}
         self.runned = {}
         self.deleteLater()
  
@@ -327,31 +297,21 @@ class DockClient(QPushButton):
 
 class DockPower(QPushButton):
     """кнопка питания"""
-    def __init__(self, parent=None,size = [40,40],theme="dark"):
+    def __init__(self, parent,size:list,Theme: dict):
         super().__init__(parent)
         SX,SY = size
-        if theme == 'dark': self.theme = 'L'
-        else: self.theme = 'D'
+        self.Theme = Theme
+        self.Logger = NLLogger(False,"DockPower")
+        self.Logger.Info("started",ConColors.B,False)
         self.setFixedSize(SX,SY)
         self.setToolTip('power')
         self.setAttribute(Qt.WA_AlwaysShowToolTips)  
         self.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.customContextMenuRequested.connect(self.openMenu)
-        self.setIcon(QIcon(f"/usr/share/NikoruDE/Image/Dock/icons/{self.theme}power.svg"))
+        self.setIcon(QIcon(self.Theme["IconPath"]+"/power.svg"))
         self.setIconSize(QSize(SX - 15, SX - 15))
     
-        self.setStyleSheet("""
-            QPushButton {
-                background: #2d2d2d;
-                border: 0px solid #505050;
-                border-radius: 4px;
-                color: white;
-                font-size: 12px;
-            }
-            QPushButton:hover { 
-                background: #575757;
-            }
-        """)
+        self.setStyleSheet(self.Theme["Overview"])
 
     def openMenu(self, pos):
         pass  
@@ -363,31 +323,21 @@ class DockPower(QPushButton):
     
 class DockWorkspaces(QPushButton):
     """Панель управления рабочими столами"""
-    def __init__(self,WHAL:WorkspacesHAL, parent=None,size = [30,40],theme="dark"):
+    def __init__(self,WHAL:WorkspacesHAL, parent,size:list,Theme:dict):
         super().__init__(parent)
-        if theme == 'dark': self.theme = 'L'
-        else: self.theme = 'D'
+        self.Theme = Theme
         self.SX,self.SY = size
         self.WHAL = WHAL
+        self.Logger = NLLogger(False,"DockWorkspaces")
+        self.Logger.Info("started",ConColors.B,False)
         self.setFixedSize(self.SX,self.SY)
         self.clicked.connect(self.openInternetMenu)
         self.setAttribute(Qt.WA_AlwaysShowToolTips)
         self.update()
-        self.setStyleSheet("""
-            QPushButton {
-                background: #2d2d2d;
-                border: 0px solid #505050;
-                border-radius: 4px;
-                color: white;
-                font-size: 12px;
-            }
-            QPushButton:hover { 
-                background: #575757;
-            }
-            
-        """)
+        
     def update(self):
-        self.setIcon(QIcon(f"/usr/share/NikoruDE/Image/Dock/icons/{self.theme}Layers.svg"))
+        self.setStyleSheet(self.Theme["Overview"])
+        self.setIcon(QIcon(self.Theme["IconPath"]+"/Layers.svg"))
         self.setIconSize(QSize(self.SX - 5, self.SX - 5))
         self.setToolTip("Control Workspaces")
 
@@ -401,11 +351,13 @@ class DockWorkspaces(QPushButton):
         return super().event(e)   
 
 class DockClientManager():
-    def __init__(self,HAL:HyprAL,ClientArea:DockScrollClientArea, debug=False, configPath= "~/.config/NikoruDE/ClientPanel.confJs"):
+    def __init__(self,HAL:HyprAL,ClientArea:DockScrollClientArea,Theme = {"Clients":''}, configPath= "~/.config/NikoruDE/ClientPanel.confJs"):
         self.eventBridge = EventBridge()
         self.eventBridge.eventSignal.connect(self.UpdateManager)
 
-        self.debug = debug
+
+        self.Logger = NLLogger(False,"DockClient-Manager")
+        self.Logger.Info("started",ConColors.B,False)
         self.ClientArea = ClientArea
         self.HAL = HAL
         self.currentAlignment = Qt.AlignLeft
@@ -416,6 +368,8 @@ class DockClientManager():
         self.IC = {}
         self.ID = {}
         self.blacklist = []
+
+        self.Theme = Theme
 
         self.targetEvents = ["openwindow", "closewindow", "movewindow"]
         
@@ -439,26 +393,24 @@ class DockClientManager():
                 self.IC[clientData["initialClass"]].ids.append(clientData["address"])
                 self.ID[clientData["address"]] = self.IC[clientData["initialClass"]]
 
-                #self.IDtoIC[clientData["address"]] = clientData["initialClass"]
 
                 self.IC[clientData["initialClass"]].runned[clientData["address"]] = True
                 if clientData["hidden"] == "false":
-                    self.IC[clientData["initialClass"]].hidden[clientData["address"]] = False
+                    self.IC[clientData["initialClass"]].visible[clientData["address"]] = False
                 else:
-                    self.IC[clientData["initialClass"]].hidden[clientData["address"]] = True
+                    self.IC[clientData["initialClass"]].visible[clientData["address"]] = True
             else:
                 icoPath,title,ico = self.HAL.getClientInfo(clientData["initialClass"])
                 icon = QIcon.fromTheme(ico) or QIcon(icoPath) or QIcon.fromTheme(self.HAL._getName(clientData["initialClass"]).lower()) or QIcon.fromTheme(clientData["initialClass"].lower())
-                client = DockClient(self.HAL,title,icon,clientData["initialClass"])
+                client = DockClient(self.HAL,title,icon,clientData["initialClass"],Theme=self.Theme)
                 client.ids.append(clientData["address"])
 
-                #self.IDtoIC[clientData["address"]] = clientData["initialClass"]
 
                 client.runned[clientData["address"]] = True
                 if clientData["hidden"] == "false":
-                    client.hidden[clientData["address"]] = False
+                    client.visible[clientData["address"]] = False
                 else:
-                    client.hidden[clientData["address"]] = True
+                    client.visible[clientData["address"]] = True
 
                 self.IC[clientData["initialClass"]] = client
                 self.ID[clientData["address"]] = client
@@ -469,17 +421,17 @@ class DockClientManager():
         client = self.ID[id]
         if len(client.ids) > 1:
             client.ids.remove(id)
-            del client.hidden[id]
+            del client.visible[id]
             del client.runned[id] 
         elif len(client.ids) == 1:
-            if not client.pinned:
+            if not client.pin:
                 self.ClientArea.clientsLayout.removeWidget(client)
                 client.delete()
                 self.ClientArea.setAlignment(self.currentAlignment)
                 del self.IC[client.IC]
             else:
                 client.ids = []
-                client.hidden = {}
+                client.visible = {}
                 client.runned = {}
         #del self.IDtoIC[id]
         del self.ID[id]
@@ -491,26 +443,23 @@ class DockClientManager():
                 self.IC[clientData["initialClass"]].ids.append(clientData["address"])
                 self.ID[clientData["address"]] = self.IC[clientData["initialClass"]]
 
-                #self.IDtoIC[clientData["address"]] = clientData["initialClass"]
 
                 self.IC[clientData["initialClass"]].runned[clientData["address"]] = True
                 if clientData["hidden"] == "false":
-                    self.IC[clientData["initialClass"]].hidden[clientData["address"]] = False
+                    self.IC[clientData["initialClass"]].visible[clientData["address"]] = False
                 else:
-                    self.IC[clientData["initialClass"]].hidden[clientData["address"]] = True
+                    self.IC[clientData["initialClass"]].visible[clientData["address"]] = True
             else:
                 icoPath,title,ico = self.HAL.getClientInfo(clientData["initialClass"])
                 icon = QIcon.fromTheme(ico) or QIcon(icoPath) or QIcon.fromTheme(self.HAL._getName(clientData["initialClass"]).lower()) or QIcon.fromTheme(clientData["initialClass"].lower())
-                client = DockClient(self.HAL,title,icon,clientData["initialClass"])
+                client = DockClient(self.HAL,title,icon,clientData["initialClass"],Theme=self.Theme)
                 client.ids.append(clientData["address"])
-
-                #self.IDtoIC[clientData["address"]] = clientData["initialClass"]
 
                 client.runned[clientData["address"]] = True
                 if clientData["hidden"] == "false":
-                    client.hidden[clientData["address"]] = False
+                    client.visible[clientData["address"]] = False
                 else:
-                    client.hidden[clientData["address"]] = True
+                    client.visible[clientData["address"]] = True
 
                 self.IC[clientData["initialClass"]] = client
                 self.ID[clientData["address"]] = client
@@ -520,9 +469,10 @@ class DockClientManager():
     def _asyncYunkEvent(self, raw_data):
         self.eventBridge.eventSignal.emit(raw_data)
 
-    def UpdateHiddenClient(self,id,stae:bool):
+    def UpdateHiddenClient(self,id,state:bool):
         client = self.ID[id]
-        client.hidden[id] = stae
+        client.visible[id] = state
+        print('hidState:',state)
 
     def ClientFilter(self,byteData:str):
         try:
@@ -562,7 +512,9 @@ class DockClientManager():
                     self.CloseClient('0x'+id)
                 if byteEvent == b'movewindow':
                     if byteData[1] == b'99':
-                        self.UpdateHiddenClient("0x"+id,stae=True)
+                        self.UpdateHiddenClient("0x"+id,state=False)
                     else:
-                        self.UpdateHiddenClient("0x"+id,stae=False)
+                        self.UpdateHiddenClient("0x"+id,state=True)
+
+
 

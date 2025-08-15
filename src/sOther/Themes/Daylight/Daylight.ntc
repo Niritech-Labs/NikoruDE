@@ -1,0 +1,8 @@
+{
+    "Author": "Niris",
+    "Name": "Daylight",
+    "Description": "Standard Light theme Nikoru desktop environment",
+    "SYS": "/usr/share/NikoruDE/Other/Themes/Daylight/Daylight.qss",
+    "GTK": "/usr/share/NikoruDE/Other/Themes/Daylight/GTK",
+    "QT": "/usr/share/NikoruDE/Other/Themes/Daylight/QT"
+}
