@@ -7,7 +7,6 @@ import shutil
 import subprocess
 
 srcdir = os.path.dirname(__file__)+'/src'
-image = srcdir+'/sImages'
 code = srcdir+'/sCode'
 other = srcdir+'/sOther'
 R = "\033[91m"
@@ -19,7 +18,6 @@ S = "\033[0m"
 
 def Copy():
     try:
-        shutil.copytree(image,'/usr/share/NikoruDE/Image')
         shutil.copytree(other,'/usr/share/NikoruDE/Other')
         shutil.copytree(code,'/usr/share/NikoruDE/Code')
         shutil.rmtree('/usr/share/NikoruDE/Code/modules')
