@@ -15,7 +15,6 @@ Nikoru Desktop Environment это open-source окружение рабочег�
 ```bash
 git clone https://github.com/Niritech-Labs/NikoruDE.git
 cd NikoruDE
-sudo pip install pybind11 
 sudo python3 install.py
 ```
 чтобы удалить выполните 
@@ -29,7 +28,6 @@ sudo python3 uninstall.py
 - PySide6 
 - NetworkManager 
 - ModemManager 
-- libdrm ≥ 2.4.123 включая devel пакет
   
 ---
 
@@ -48,8 +46,7 @@ This software is distributed under the [GPL-3.0](LICENSE) license.
 to install DE run: 
 ```bash
 git clone https://github.com/Niritech-Labs/NikoruDE.git
-cd NikoruDE
-sudo pip install pybind11  
+cd NikoruDE 
 sudo python3 install.py
 ```
 to uninstall run 
@@ -63,5 +60,5 @@ sudo python3 uninstall.py
 - PySide6 
 - NetworkManager 
 - ModemManager
-- libdrm ≥ 2.4.123 include devel package
+
 
