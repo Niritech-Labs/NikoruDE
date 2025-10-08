@@ -109,22 +109,23 @@ class UpdateChache:
 			
 			
 class NikoruThemeManager:
-	def __init__(self):
-		self.Logger = NLLogger(False)
-		self.CM = ConfigManager('~/.config/NikoruDE/Overview.confJs')
-		self.allCfg = self.CM.LoadConfig()
-		if "Theme" in self.allCfg:
-			self.Theme = self.allCfg["Theme"]
+	def __init__(self,configTheme: dict,production: bool):
+		self.Logger = NLLogger(production,"ThemeManager")
+		self.themeCfg = configTheme
+		self.CM = ConfigManager('',production)
+		if not self.themeCfg['user'] == '':
+			self.Theme = self.themeCfg['user']
 		else:
-			self.Theme = "Daylight"
-			self.AllPaths = None
-			self.allCfg["Theme"] = "Daylight"
-			self.CM.SaveConfig(self.allCfg)
+			self.Theme = self.themeCfg['system']
 		self.LoadTheme(self.Theme)
 
 	def LoadTheme(self,theme):
 		try:
-			self.AllPaths = self.CM.OpenRestricted(f"~/NiraLinux-project/NikoruDE/main/src/sOther/Themes/{theme}/{theme}.ntc")
+			print(self.themeCfg['user'])
+			if not self.themeCfg['user'] == None:
+				self.AllPaths = self.CM.OpenRestricted(f"/usr/share/NikoruDE/Other/Themes/{theme}/{theme}.ntc")
+			else:
+				self.AllPaths = self.CM.OpenRestricted(f"~/.local/share/nikoru/themes/{theme}/{theme}.ntc")
 		except Exception as e:
 			self.Logger.Error (e, True)
 
@@ -132,11 +133,14 @@ class NikoruThemeManager:
 		subprocess.run([self.AllPaths["GTK"]],waitAnswer = True)
 		subprocess.run([self.AllPaths["QT"]],waitAnswer = True)
 
-	def SYS_Th_Reload(self) -> dict:
-		self.Theme = self.allCfg["Theme"]
+	def ThemeLoad(self) -> dict:
+		if not self.themeCfg['user'] == '':
+			self.Theme = self.themeCfg['user']
+		else:
+			self.Theme = self.themeCfg['system']
 		self.LoadTheme(self.Theme)
 		theme = self.CM.OpenRestricted(self.AllPaths["SYS"])
 		if not theme == None:
 			return theme
 		else:
-			self.Logger.Error("Failed to load SYS Theme, Exiting.", True)
+			self.Logger.Error("Failed to load theme, Exiting.", True)

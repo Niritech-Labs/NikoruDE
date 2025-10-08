@@ -7,8 +7,8 @@ from pathlib import Path
 
 
 class ConfigManager():
-    def __init__(self,path,debug = False):
-        self.Logger = NLLogger(True)
+    def __init__(self,path,produttion:bool):
+        self.Logger = NLLogger(produttion,"ConfigManager")
         self.configPath = Path(path).expanduser().resolve()
 
     def LoadConfig(self) -> dict: 

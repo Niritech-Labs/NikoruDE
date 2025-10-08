@@ -9,6 +9,7 @@ from PySide6.QtWidgets import QApplication, QMainWindow, QWidget,QPushButton,QHB
 from Core.CoreHAL import HyprAL
 from Core.CoreStyle import NikoruThemeManager
 from Core.NLUtils import NLLogger, ConColors
+from Settings.SettingsBackend import SettingsBackend
 from Widgets.DockPanelWidgets import DockClientManager,DockSettings,DockTime,DockScrollClientArea,DockSVG,DockTerminal,DockInternet,DockPower,DockWorkspaces
 
 """Вы уж извините,но использовать встроенный языковой переводчик я не буду (poka ne budu), его написали больные мазохизмом люди! каждый перевод писать заново? ну уж нет!"""
@@ -16,21 +17,26 @@ class DockPanel(QMainWindow):
     """Док панель,здесь вы найдёте Нириса в качестве пасхалки"""
     def __init__(self,HAl:HyprAL):
         super().__init__()
+        self.production = False
         # Настройка окна UwU
+        self.setObjectName('DockBase')
         self.Logger = NLLogger(False,"DockPanel")
         self.Logger.Info("started",ConColors.B,False)
-        self.ThM = NikoruThemeManager()
-        self.Theme = self.ThM.SYS_Th_Reload()['DockPanel']
+        self.SB = SettingsBackend(False,self.production)
+        self.SB.LoadConfig()
+        self.ThM = NikoruThemeManager(self.SB.AllSettings['system-style'],self.production)
+        self.Theme = self.ThM.ThemeLoad()
         self.HAL = HAl
         self.StdIconSize = [30,40]
         self.app_alignment = 'center'
         self.setWindowFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint)
         self.setAttribute(Qt.WA_TranslucentBackground, False)
-        self.setStyleSheet(self.Theme["Overview"])
+        self.setStyleSheet(self.Theme["main"])
        
         
         # Настройка начального размера и позиции
         rootWidget = QWidget()
+        rootWidget.setObjectName('DockRootWidget')
         rootLayoutLRC = QHBoxLayout(rootWidget)
         rootLayoutLRC.setContentsMargins(0, 0, 0, 0)
         rootLayoutLRC.setSpacing(0)
@@ -39,10 +45,9 @@ class DockPanel(QMainWindow):
         self._initLeftPanel()
         # Центральная область (растягивается)
         self.ClientArea = DockScrollClientArea(None,self.Theme)
-        self.ClientManadger = DockClientManager(self.HAL,self.ClientArea,self.Theme)
+        self.ClientArea.setObjectName('DockRootWidget')
+        self.ClientManadger = DockClientManager(self.HAL,self.production,self.ClientArea,self.Theme)
         self._initRightPanel()
-        #self.AppManadger.LoadApps()
-
 
         # Собираем все вместе
         rootLayoutLRC.addWidget(self.leftPanel)
@@ -52,42 +57,41 @@ class DockPanel(QMainWindow):
         self.setCentralWidget(rootWidget)
         # Стилизация
        
-        #self.add_test_buttons(60)
         self.set_alignment(Qt.AlignLeft)
         
         self.update_geometry(40) 
-        # Отслеживание изменений экрана
         QApplication.primaryScreen().geometryChanged.connect(self.handle_screen_resize)
 
     def _initLeftPanel(self):
-          # Левая область (200px)
         self.leftPanel = QWidget()
-        left_layout = QHBoxLayout(self.leftPanel)
-        left_layout.setContentsMargins(0, 0, 0, 0)
-        left_layout.setSpacing(2)
-        self.btn_left = DockSVG("ArrowMiniLeft",None,self.StdIconSize,self.Theme)
+        self.leftPanel.setObjectName('DockRootWidget')
+        leftLayout = QHBoxLayout(self.leftPanel)
+        leftLayout.setContentsMargins(0, 0, 0, 0)
+        leftLayout.setSpacing(2)
+        self.ScrollLeft = DockSVG("ArrowMiniLeft",None,self.StdIconSize,self.Theme)
         
-        self.btn_left.clicked.connect(lambda: self.ClientArea.scroll_to("left"))
+        self.ScrollLeft.clicked.connect(lambda: self.ClientArea.scroll_to("left"))
         
         power = DockPower(None,[40,40],self.Theme)
         layers = DockWorkspaces(None,None,self.StdIconSize,self.Theme)
-        # Добавляем 2 кнопки
-        left_layout.addWidget(power)
-        left_layout.addWidget(layers)
-        left_layout.addWidget(self.btn_left)
+        
+        leftLayout.addWidget(power)
+        leftLayout.addWidget(layers)
+        leftLayout.addWidget(self.ScrollLeft)
 
     def _initRightPanel(self):
         
         self.rightPanel = QWidget()
-        right_layout = QHBoxLayout(self.rightPanel)
-        right_layout.setContentsMargins(0, 0,0, 0)
-        right_layout.setSpacing(4)
+        self.rightPanel.setObjectName('DockRootWidget')
+        rightLayout = QHBoxLayout(self.rightPanel)
+        rightLayout.setContentsMargins(0, 0,0, 0)
+        rightLayout.setSpacing(4)
         
         
        
 
-        btn_right = DockSVG("ArrowMiniRight",None,self.StdIconSize,self.Theme)
-        btn_right.clicked.connect(lambda: self.ClientArea.scroll_to("right"))
+        ScrollRight = DockSVG("ArrowMiniRight",None,self.StdIconSize,self.Theme)
+        ScrollRight.clicked.connect(lambda: self.ClientArea.scroll_to("right"))
         
         dsettings = DockSettings(None,self.StdIconSize,self.Theme)
         time_btn = DockTime(None,[72,40],Theme=self.Theme)
@@ -97,17 +101,18 @@ class DockPanel(QMainWindow):
         internet = DockInternet(None,None,self.StdIconSize,self.Theme)
 
         btn = QPushButton()
+        btn.setObjectName('DockButtons')
         btn.setFixedSize(20, 40)
-        btn.setStyleSheet(self.Theme["Overview"])
+        btn.setStyleSheet(self.Theme['main'])
         
         
-        right_layout.addWidget(btn_right)
-        right_layout.addWidget(menu)
-        right_layout.addWidget(terminal)
-        right_layout.addWidget(internet)
-        right_layout.addWidget(dsettings)
-        right_layout.addWidget(time_btn)
-        right_layout.addWidget(btn)
+        rightLayout.addWidget(ScrollRight)
+        rightLayout.addWidget(menu)
+        rightLayout.addWidget(terminal)
+        rightLayout.addWidget(internet)
+        rightLayout.addWidget(dsettings)
+        rightLayout.addWidget(time_btn)
+        rightLayout.addWidget(btn)
    
 
 

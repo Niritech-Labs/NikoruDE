@@ -4,9 +4,10 @@
 # the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 import sys,os
 sys.path.insert(0,os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from PySide6.QtCore import Qt, QSize, QPropertyAnimation, QEasingCurve,QPoint,QEvent,QTimer,QLocale,QDateTime,Signal
+from PySide6.QtCore import Qt, QSize, QPropertyAnimation, QEasingCurve,QPoint,QEvent,QTimer,QLocale,QDateTime,Signal,QObject
 from PySide6.QtWidgets import QWidget, QPushButton,QHBoxLayout, QScrollArea, QSizePolicy, QSpacerItem, QToolTip,QMenu
 from PySide6.QtGui import QIcon
+from PySide6.QtNetwork import QLocalServer
 from Core.CoreHAL import HyprAL,WorkspacesHAL,EventBridge
 from Core.CoreIAL import InterAL
 from Core.NLUtils import ConfigManager
@@ -18,7 +19,7 @@ from Core.NLUtils import NLLogger,ConColors
 
 
 class DockScrollClientArea(QWidget):
-    def __init__(self, parent,Theme: dict):
+    def __init__(self, parent,Theme:str):
         super().__init__(parent)
         self.Logger = NLLogger(False,"ClientArea")
         self.Logger.Info("started",ConColors.B,False)
@@ -29,16 +30,19 @@ class DockScrollClientArea(QWidget):
         self.scrollArea.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         
         self.Theme = Theme
-        self.content_widget = QWidget()
-        self.clientsLayout = QHBoxLayout(self.content_widget)
+        self.contentClient = QWidget()
+        self.contentClient.setObjectName('DockRootWidget')
+        self.contentClient.setStyleSheet(self.Theme['main'])
+        self.clientsLayout = QHBoxLayout(self.contentClient)
         self.clientsLayout.setContentsMargins(0, 0, 0, 0)
         
-        self.scrollArea.setWidget(self.content_widget)
+        self.scrollArea.setWidget(self.contentClient)
         
         self.main_layout = QHBoxLayout(self)
         self.main_layout.addWidget(self.scrollArea)
         self.main_layout.setContentsMargins(0, 0, 0, 0)
-        self.setStyleSheet(self.Theme["ClientArea"])
+        self.setObjectName('DockRootWidget')
+        self.setStyleSheet(self.Theme['main'])
         
 
         # Инициализация спейсеров
@@ -71,7 +75,7 @@ class DockScrollClientArea(QWidget):
 
 class DockSettings(QPushButton):
     """Кнопка с отображением времени и даты"""
-    def __init__(self, parent,size:list,Theme: dict):
+    def __init__(self, parent,size:list,Theme: str):
         super().__init__(parent)
         self.Theme = Theme
         SX,SY = size
@@ -86,8 +90,9 @@ class DockSettings(QPushButton):
         self.customContextMenuRequested.connect(self.openMenu)
         
     def update(self):
+        self.setObjectName('DockButtons')
         self.setToolTip("Settings")
-        self.setStyleSheet(self.Theme["Overview"])
+        self.setStyleSheet(self.Theme['main'])
 
     def openMenu(self, pos):
         pass  
@@ -109,7 +114,8 @@ class DockSVG(QPushButton):
         self.setFixedSize(SX,SY)
         self.setIcon(QIcon(self.Theme["IconPath"]+f"/{ico}.svg"))
         self.setIconSize(QSize(SX - 5, SX - 5))
-        self.setStyleSheet(self.Theme["Overview"])
+        self.setObjectName('DockButtons')
+        self.setStyleSheet(self.Theme["main"])
 
 class DockTerminal(QPushButton):
     """Кнопка с отображением времени и даты"""
@@ -126,7 +132,8 @@ class DockTerminal(QPushButton):
         self.clicked.connect(lambda: self.HAL.RunProcess('rio'))
         self.setToolTip("Open terminal")
         self.setAttribute(Qt.WA_AlwaysShowToolTips)
-        self.setStyleSheet(self.Theme["Overview"])
+        self.setObjectName('DockButtons')
+        self.setStyleSheet(self.Theme["main"])
     def event(self, e):
         if e.type() == QEvent.ToolTip:
             QToolTip.showText(self.mapToGlobal(QPoint(-5,-50)),self.toolTip(),self)
@@ -147,7 +154,8 @@ class DockInternet(QPushButton):
         self.clicked.connect(self.openInternetMenu)
         self.setAttribute(Qt.WA_AlwaysShowToolTips)
         self.update()
-        self.setStyleSheet(self.Theme["Overview"])
+        self.setObjectName('DockButtons')
+        self.setStyleSheet(self.Theme["main"])
         
     def update(self):
         self.setIcon(QIcon(self.Theme["IconPath"]+f"/{self.status[0]}.svg"))
@@ -165,7 +173,7 @@ class DockInternet(QPushButton):
     
 class DockTime(QPushButton):
     """отображение времени и даты"""
-    def __init__(self, parent=None,size = [72,40],locale = QLocale.Russian,Theme = ''):
+    def __init__(self, parent=None,size = [72,40],locale = QLocale.Russian,Theme = {}):
         super().__init__(parent)
         SX,SY = size
         self.localen = QLocale(locale)
@@ -186,7 +194,8 @@ class DockTime(QPushButton):
         self.setText(current_time.toString("HH:mm\n dd.MM.yyyy"))
         
         self.setToolTip(self.localen.toString(current_time,"d MMMM yyyy',' dddd"))
-        self.setStyleSheet(self.Theme["Overview"])
+        self.setObjectName('DockButtons')
+        self.setStyleSheet(self.Theme["main"])
 
     def openMenu(self, pos):
         pass  
@@ -199,7 +208,7 @@ class DockTime(QPushButton):
 class DockClient(QPushButton):
     """Графическая обёртка приложения для док панели"""
     destroing = Signal()
-    def __init__(self, HAL:HyprAL,title: str, icon: QIcon,IC: str, parent=None,pinned = False,Theme = {"Clients":''}):
+    def __init__(self, HAL:HyprAL,title: str, icon: QIcon,IC: str, parent=None,pinned = False,Theme = {}):
         super().__init__(parent)
         self.HAL = HAL
         
@@ -229,7 +238,8 @@ class DockClient(QPushButton):
         self.setFixedSize(40, 40) 
         self.setToolTip(self.title) #подсказка о названии приложения
         self.setAttribute(Qt.WA_AlwaysShowToolTips)
-        self.setStyleSheet(self.Theme["Clients"])
+        self.setObjectName('DockClients')
+        self.setStyleSheet(self.Theme["main"])
     #подсказка о названии приложения
     def nameToltip(self):
         QToolTip.showText(self.mapToGlobal(self.rect().bottomLeft),self.title)
@@ -312,8 +322,8 @@ class DockPower(QPushButton):
         self.customContextMenuRequested.connect(self.openMenu)
         self.setIcon(QIcon(self.Theme["IconPath"]+"/power.svg"))
         self.setIconSize(QSize(SX - 15, SX - 15))
-    
-        self.setStyleSheet(self.Theme["Overview"])
+        self.setObjectName('DockButtons')
+        self.setStyleSheet(self.Theme["main"])
 
     def openMenu(self, pos):
         pass  
@@ -338,7 +348,8 @@ class DockWorkspaces(QPushButton):
         self.update()
         
     def update(self):
-        self.setStyleSheet(self.Theme["Overview"])
+        self.setStyleSheet(self.Theme["main"])
+        self.setObjectName('DockButtons')
         self.setIcon(QIcon(self.Theme["IconPath"]+"/Layers.svg"))
         self.setIconSize(QSize(self.SX - 5, self.SX - 5))
         self.setToolTip("Control Workspaces")
@@ -353,10 +364,10 @@ class DockWorkspaces(QPushButton):
         return super().event(e)   
 
 class DockClientManager():
-    def __init__(self,HAL:HyprAL,ClientArea:DockScrollClientArea,Theme = {"Clients":''}, configPath= "~/.config/NikoruDE/ClientPanel.confJs"):
+    def __init__(self,HAL:HyprAL,production:bool,ClientArea:DockScrollClientArea,Theme = {"Clients":''}, configPath= "~/.config/Nikoru/Clients.confJs"):
         self.eventBridge = EventBridge()
         self.eventBridge.eventSignal.connect(self.UpdateManager)
-
+        self.production = production
 
         self.Logger = NLLogger(False,"DockClient-Manager")
         self.Logger.Info("started",ConColors.B,False)
@@ -364,12 +375,15 @@ class DockClientManager():
         self.HAL = HAL
         self.currentAlignment = Qt.AlignLeft
 
-        self.config = ConfigManager(configPath)
+        self.config = ConfigManager(configPath,self.production)
         self.AppsConfig = self.config.LoadConfig()
 
         self.IC = {}
         self.ID = {}
         self.blacklist = []
+
+        self.SServer = SockServer(self.HAL,self.Logger)
+        self.SServer._SetupServer()
 
         self.Theme = Theme
 
@@ -391,6 +405,8 @@ class DockClientManager():
     def InitClients(self):
         ClientsData = self.HAL.GetClients()
         for clientData in ClientsData:
+            if "Nikoru@" in clientData["initialClass"]:
+                self.SServer.ICS[clientData["initialClass"]] = clientData["address"]
             if clientData["initialClass"] in self.IC:
                 self.IC[clientData["initialClass"]].ids.append(clientData["address"])
                 self.ID[clientData["address"]] = self.IC[clientData["initialClass"]]
@@ -476,31 +492,46 @@ class DockClientManager():
         client.visible[id] = state
         print('hidState:',state)
 
-    def ClientFilter(self,byteData:str):
+    def ClientFilter(self,byteData:str,byteEvent):
         try:
-            splitedData = byteData.split(b',')
-            clid = splitedData[0]
-            dd = splitedData[2]
-            Title = splitedData[3]
-            if b'@' in Title:
-                sys,name = Title.split(b'@')
-            if sys == b'Nikoru':
-                if not clid in self.blacklist:
-                    self.blacklist.append(clid)
-                return False
-            elif dd == b'' and Title == b'':
-                if not clid in self.blacklist:
-                    self.blacklist.append(clid)
+            if byteData.count(b',') > 0:
+                splitedData = byteData.split(b',')
+                bid = splitedData[0]
+            else:
+                bid = byteData
+            if byteData.count(b',') > 2:
+                btitle = splitedData[3]
+                if b'@' in btitle:
+                    sys,_name = btitle.split(b'@')
+                    if sys == b'Nikoru':
+                        title = btitle.decode('utf-8', errors='ignore')
+                        if byteEvent == b'openwindow':
+                            bid = bid.decode('utf-8', errors='ignore')
+                            self.SServer.ICS[title] = "0x"+bid
+                            self.Logger.Info('Opened menu window'+title,ConColors.Y,False)
+                        if byteEvent == b'closewindow':
+                            self.SServer.ICS[title] = None
+                            self.Logger.Info('Closed menu window'+title,ConColors.Y,False)
+                        if not bid in self.blacklist:
+                            self.blacklist.append(bid)
+                            return False
+                elif btitle == b'':
+                    if not bid in self.blacklist:
+                        self.blacklist.append(bid)
+                    return False
+                
+            elif bid in self.blacklist:
                 return False
             else:
                 return True
-        except:
+        except Exception as e:
+            self.Logger.Error('Filter: '+str(e))
             return True
 
     def UpdateManager(self,data: str):
         byteEvent, byteData = data.split(b'>>')
         print(byteData)
-        if self.ClientFilter(byteData=byteData):
+        if self.ClientFilter(byteData=byteData,byteEvent=byteEvent):
             if b',' in byteData:
                 byteData = byteData.split(b',')
                 id = byteData[0]
@@ -517,6 +548,64 @@ class DockClientManager():
                         self.UpdateHiddenClient("0x"+id,state=False)
                     else:
                         self.UpdateHiddenClient("0x"+id,state=True)
+        else:
+            self.Logger.Info('Filter',ConColors.V,False)
+           
 
 
+class SockServer(QWidget):
+    def __init__(self,HAL:HyprAL,Logger:NLLogger):
+        super().__init__(None)
+        
+        self.ICS = {}
+        self.HAL = HAL
+        self.Logger = Logger
+        self.serverName = 'Niradock'
+       
+    def _SetupServer(self):
+        self.server = QLocalServer(self)
 
+        QLocalServer.removeServer(self.serverName)
+
+        if self.server.listen(self.serverName):
+            self.server.newConnection.connect(self.connection)
+        else:
+            self.Logger.Error('Failed to start server:'+self.server.errorString(),True)
+
+    def connection(self):
+        soket = self.server.nextPendingConnection()
+        if soket:
+            soket.readyRead.connect(lambda:self.processCommand(soket))
+            soket.disconnected.connect(soket.deleteLater)
+    def processCommand(self,socket):
+        data = socket.readAll().data().decode().strip()
+        command,IC = data.split('_')
+        if command == 'open':
+            self.unhideWindow(IC)
+        elif command == 'close':
+            self.hideWindow(IC)
+    def unhideWindow(self,IC):
+        try:
+            
+            clid = self.ICS[IC]
+            idActiveWorkspace = json.loads(self.HAL.hyprctl.send(b'j/activeworkspace'))['id']
+            unhide = f'dispatch movetoworkspacesilent {idActiveWorkspace},address:{clid}'
+            setActive = f'dispatch focuswindow address:{clid}'
+
+            self.HAL.hyprctl.send(bytes(unhide,'utf-8'))
+            self.HAL.hyprctl.send(bytes(setActive,'utf-8'))
+        except Exception as e:
+            self.Logger.Error("Menu isn't exists:"+str(e),False)
+            
+    def hideWindow(self,IC):
+        try:
+            print(self.ICS)
+            print(IC)
+            clid = self.ICS[IC]
+            hide = f'dispatch movetoworkspacesilent 99,address:{clid}'
+            self.HAL.hyprctl.send(bytes(hide,'utf-8'))
+        except Exception as e:
+            self.Logger.Error("Menu isn't exists:"+str(e),False)
+    
+       
+     
