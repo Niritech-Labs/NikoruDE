@@ -24,6 +24,7 @@ class DockScrollClientArea(QWidget):
         self.Logger = NLLogger(False,"ClientArea")
         self.Logger.Info("started",ConColors.B,False)
         self.scrollArea = QScrollArea()
+        self.currentAlignment = Qt.AlignLeft
         self.setFixedHeight(40)
         self.scrollArea.setWidgetResizable(True)
         self.scrollArea.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
@@ -72,6 +73,11 @@ class DockScrollClientArea(QWidget):
         elif alignment == Qt.AlignCenter: self.clientsLayout.insertSpacerItem(0, self.left_spacer); self.clientsLayout.addSpacerItem(self.right_spacer)
         
         self.clientsLayout.setAlignment(alignment)
+        self.currentAlignment = alignment
+
+    def reloadAlignment(self):
+        self.setAlignment(self.currentAlignment)
+        
 
 class DockSettings(QPushButton):
     """Кнопка с отображением времени и даты"""
@@ -208,8 +214,8 @@ class DockTime(QPushButton):
 class DockClient(QPushButton):
     """Графическая обёртка приложения для док панели"""
     destroing = Signal()
-    def __init__(self, HAL:HyprAL,title: str, icon: QIcon,IC: str, parent=None,pinned = False,Theme = {}):
-        super().__init__(parent)
+    def __init__(self, HAL:HyprAL,title: str, icon: QIcon,IC: str,pinned:bool,icoPath:tuple,Theme:dict):
+        super().__init__(None)
         self.HAL = HAL
         
 
@@ -218,6 +224,7 @@ class DockClient(QPushButton):
         self.visible = {}
 
         self.lastClient = ''
+        self.iconPath = icoPath
         self.Theme = Theme
         self.pin = pinned
         self.ids = []
@@ -232,7 +239,6 @@ class DockClient(QPushButton):
         self.Logger.Info("started",ConColors.B,False)
 
     def setup_ui(self):
-        if self.HAL.debug: print(self.title)
         self.setIcon(self.icond)
         self.setIconSize(QSize(38, 38))
         self.setFixedSize(40, 40) 
@@ -251,38 +257,39 @@ class DockClient(QPushButton):
         print(comand.stdout.strip())
         
     def LClick(self):
-        print(self.visible,'u')
         if self.ids == [] and self.pin:
             self.run()
         if not self.visible == {}:
             for ID in self.visible:
-                value = self.visible[ID]
-                if value == False:
+                clientVisible = self.visible[ID]
+                if clientVisible == False:
+                    #print(self.visible,self.IC+' Client set command to visible : '+ID)
                     self.HideManager(True,ID)
                     self.lastClient = ID
-                    print(self.visible,'ud')
                     return
             if self.lastClient == '':
                 self.lastClient = self.ids[0]
+            #print(self.visible,self.IC+' Client set command to hide : '+ID)
             self.HideManager(False,self.lastClient)
-            print('hide')
-            print(self.visible,'d')
+            
         
  
             
     def run():
         pass
 
-    def HideManager(self,visible:bool,id:str):
+    def HideManager(self,visible:bool,ID:str):
         idActiveWorkspace = json.loads(self.HAL.hyprctl.send(b'j/activeworkspace'))['id']
-        unhide = f'dispatch movetoworkspacesilent {idActiveWorkspace},address:{id}'
-        hide = f'dispatch movetoworkspacesilent 99,address:{id}'
-        setActive = f'dispatch focuswindow address:{id}'
+        unhide = f'dispatch movetoworkspacesilent {idActiveWorkspace},address:{ID}'
+        hide = f'dispatch movetoworkspacesilent 99,address:{ID}'
+        setActive = f'dispatch focuswindow address:{ID}'
         if visible:
             self.HAL.hyprctl.send(bytes(unhide,'utf-8'))
             self.HAL.hyprctl.send(bytes(setActive,'utf-8'))
+            print(self.visible,self.IC+' Client is visible now: '+ID)
         else:
             self.HAL.hyprctl.send(bytes(hide,'utf-8'))
+            print(self.visible,self.IC+' Client is hidden now: '+ID)
 
     def HideManagerAll(self,visible:bool):
         idActiveWorkspace = json.loads(self.HAL.hyprctl.send(b'j/activeworkspace'))['id']
@@ -309,10 +316,11 @@ class DockClient(QPushButton):
 
 class DockPower(QPushButton):
     """кнопка питания"""
-    def __init__(self, parent,size:list,Theme: dict):
+    def __init__(self, parent,size:list,Theme: dict,HAL:HyprAL):
         super().__init__(parent)
         SX,SY = size
         self.Theme = Theme
+        self.HAL = HAL
         self.Logger = NLLogger(False,"DockPower")
         self.Logger.Info("started",ConColors.B,False)
         self.setFixedSize(SX,SY)
@@ -324,7 +332,11 @@ class DockPower(QPushButton):
         self.setIconSize(QSize(SX - 15, SX - 15))
         self.setObjectName('DockButtons')
         self.setStyleSheet(self.Theme["main"])
-
+        self.clicked.connect(self.LClick)
+    def LClick(self):
+        #self.HAL.CAL.SavePinned(s)
+        self.HAL.SServer.unhideWindow('Nikoru@Power.py')
+        
     def openMenu(self, pos):
         pass  
     def event(self, e):
@@ -375,8 +387,10 @@ class DockClientManager():
         self.HAL = HAL
         self.currentAlignment = Qt.AlignLeft
 
-        self.config = ConfigManager(configPath,self.production)
-        self.AppsConfig = self.config.LoadConfig()
+        self.CM = ConfigManager(configPath,self.production)
+        self.SavedClients = self.CM.LoadConfig()
+        if self.SavedClients == None or self.SavedClients == '':
+            self.SavedClients = {}
 
         self.IC = {}
         self.ID = {}
@@ -387,12 +401,11 @@ class DockClientManager():
 
         self.Theme = Theme
 
-        self.targetEvents = ["openwindow", "closewindow", "movewindow"]
-        
-        # Регистрируем обработчики только для нужных событий
-        
-        for event_type in self.targetEvents:
-            self.HAL.hyprEvent.bind(event_type, self._asyncYunkEvent)
+        self.CAL = ClientAL(self.HAL,self.Theme,self.ClientArea,self.SavedClients,self.CM) 
+
+        self.targetEvents = ["openwindow", "closewindow", "movewindowv2"]
+        for eventType in self.targetEvents:
+            self.HAL.hyprEvent.bind(eventType, self._CallbackHyprEvent)
         self.HAL.hyprEvent.start()
 
         self.InitClients()
@@ -403,94 +416,55 @@ class DockClientManager():
         self.ClientArea.setAlignment(alignment)
 
     def InitClients(self):
+        for savedClient in self.SavedClients:
+            client = self.CAL.LoadPinned(savedClient)
+            self.IC[clientData["initialClass"]] = client
+            self.ClientArea.clientsLayout.addWidget(client)
+            self.ClientArea.setAlignment(self.currentAlignment)
         ClientsData = self.HAL.GetClients()
         for clientData in ClientsData:
             if "Nikoru@" in clientData["initialClass"]:
                 self.SServer.ICS[clientData["initialClass"]] = clientData["address"]
             if clientData["initialClass"] in self.IC:
-                self.IC[clientData["initialClass"]].ids.append(clientData["address"])
+                self.CAL.Reinit(client=self.IC[clientData["initialClass"]],clid=clientData["address"],hidden=clientData["hidden"])
                 self.ID[clientData["address"]] = self.IC[clientData["initialClass"]]
-
-
-                self.IC[clientData["initialClass"]].runned[clientData["address"]] = True
-                if clientData["hidden"] == "false":
-                    self.IC[clientData["initialClass"]].visible[clientData["address"]] = False
-                else:
-                    self.IC[clientData["initialClass"]].visible[clientData["address"]] = True
             else:
-                icoPath,title,ico = self.HAL.getClientInfo(clientData["initialClass"])
-                icon = QIcon.fromTheme(ico) or QIcon(icoPath) or QIcon.fromTheme(self.HAL._getName(clientData["initialClass"]).lower()) or QIcon.fromTheme(clientData["initialClass"].lower())
-                client = DockClient(self.HAL,title,icon,clientData["initialClass"],Theme=self.Theme)
-                client.ids.append(clientData["address"])
-
-
-                client.runned[clientData["address"]] = True
-                if clientData["hidden"] == "false":
-                    client.visible[clientData["address"]] = False
-                else:
-                    client.visible[clientData["address"]] = True
-
+                client = self.CAL.Add(IC=clientData["initialClass"],clid=clientData["address"],hidden=clientData["hidden"])
                 self.IC[clientData["initialClass"]] = client
                 self.ID[clientData["address"]] = client
                 self.ClientArea.clientsLayout.addWidget(client)
                 self.ClientArea.setAlignment(self.currentAlignment)
+            self.Logger.Info('Init: Client opened: '+clientData["address"],ConColors.G,False)
             
     def CloseClient(self,id):
-        client = self.ID[id]
-        if len(client.ids) > 1:
-            client.ids.remove(id)
-            del client.visible[id]
-            del client.runned[id] 
-        elif len(client.ids) == 1:
-            if not client.pin:
-                self.ClientArea.clientsLayout.removeWidget(client)
-                client.delete()
-                self.ClientArea.setAlignment(self.currentAlignment)
-                del self.IC[client.IC]
-            else:
-                client.ids = []
-                client.visible = {}
-                client.runned = {}
-        #del self.IDtoIC[id]
+        self.Logger.Info('Event: Client closed: '+id,ConColors.G,False)
+        self.CAL.Delete(self.ID[id])
         del self.ID[id]
 
-    def OpenClient(self,id):
-        clientData = self.HAL.GetClient(id)
+    def OpenClient(self,ID):
+        self.Logger.Info('Event: Client opened: '+ID,ConColors.G,False)
+        clientData = self.HAL.GetClient(ID)
+        # if client exists in Hyprland
         if not clientData == None:
             if clientData["initialClass"] in self.IC:
-                self.IC[clientData["initialClass"]].ids.append(clientData["address"])
+                #if client on a DockPanel
+                self.CAL.Reinit(client=self.IC[clientData["initialClass"]],clid=clientData["address"],hidden=clientData["hidden"])
                 self.ID[clientData["address"]] = self.IC[clientData["initialClass"]]
-
-
-                self.IC[clientData["initialClass"]].runned[clientData["address"]] = True
-                if clientData["hidden"] == "false":
-                    self.IC[clientData["initialClass"]].visible[clientData["address"]] = False
-                else:
-                    self.IC[clientData["initialClass"]].visible[clientData["address"]] = True
             else:
-                icoPath,title,ico = self.HAL.getClientInfo(clientData["initialClass"])
-                icon = QIcon.fromTheme(ico) or QIcon(icoPath) or QIcon.fromTheme(self.HAL._getName(clientData["initialClass"]).lower()) or QIcon.fromTheme(clientData["initialClass"].lower())
-                client = DockClient(self.HAL,title,icon,clientData["initialClass"],Theme=self.Theme)
-                client.ids.append(clientData["address"])
-
-                client.runned[clientData["address"]] = True
-                if clientData["hidden"] == "false":
-                    client.visible[clientData["address"]] = False
-                else:
-                    client.visible[clientData["address"]] = True
-
+                #if client not on a DockPanel
+                client = self.CAL.Add(IC=clientData["initialClass"],clid=clientData["address"],hidden=clientData["hidden"])
                 self.IC[clientData["initialClass"]] = client
                 self.ID[clientData["address"]] = client
                 self.ClientArea.clientsLayout.addWidget(client)
                 self.ClientArea.setAlignment(self.currentAlignment)
 
-    def _asyncYunkEvent(self, raw_data):
-        self.eventBridge.eventSignal.emit(raw_data)
+    def _CallbackHyprEvent(self, bEvent):
+        self.eventBridge.eventSignal.emit(bEvent)
 
-    def UpdateHiddenClient(self,id,state:bool):
-        client = self.ID[id]
-        client.visible[id] = state
-        print('hidState:',state)
+    def UpdateHiddenClient(self,ID,state:bool):
+        self.Logger.Info('Event: Client set visible to: '+str(state),ConColors.G,False)
+        client = self.ID[ID]
+        client.visible[ID] = state
 
     def ClientFilter(self,byteData:str,byteEvent):
         try:
@@ -528,30 +502,95 @@ class DockClientManager():
             self.Logger.Error('Filter: '+str(e))
             return True
 
-    def UpdateManager(self,data: str):
-        byteEvent, byteData = data.split(b'>>')
-        print(byteData)
-        if self.ClientFilter(byteData=byteData,byteEvent=byteEvent):
-            if b',' in byteData:
-                byteData = byteData.split(b',')
-                id = byteData[0]
+    def UpdateManager(self,bEvent: str):
+        self.Logger.Info('Current Event: '+bEvent.decode('utf-8', errors='ignore'),ConColors.Y,False)
+        bClientEvent, bData = bEvent.split(b'>>')
+        if self.ClientFilter(byteData=bData,byteEvent=bClientEvent):
+            if b',' in bData:
+                bData = bData.split(b',')
+                ID = bData[0]
             else:
-                id = byteData
-            if not id in self.blacklist:
-                id = id.decode('utf-8', errors='ignore')
-                if byteEvent == b'openwindow':
-                    self.OpenClient('0x'+id)
-                if byteEvent == b'closewindow':
-                    self.CloseClient('0x'+id)
-                if byteEvent == b'movewindow':
-                    if byteData[1] == b'99':
-                        self.UpdateHiddenClient("0x"+id,state=False)
+                ID = bData
+            if not ID in self.blacklist:
+                ID = ID.decode('utf-8', errors='ignore')
+                if bClientEvent == b'openwindow':
+                    self.OpenClient('0x'+ID)
+                if bClientEvent == b'closewindow':
+                    self.CloseClient('0x'+ID)
+                if bClientEvent == b'movewindowv2':
+                    if bData[1] == b'99':
+                        self.UpdateHiddenClient("0x"+ID,state=False)
                     else:
-                        self.UpdateHiddenClient("0x"+id,state=True)
+                        self.UpdateHiddenClient("0x"+ID,state=True)
         else:
-            self.Logger.Info('Filter',ConColors.V,False)
+            self.Logger.Info('Filtered event system service',ConColors.V,False)
            
+class ClientAL:
+    def __init__(self,HAL:HyprAL,Theme:dict,CA:DockScrollClientArea,savedClients:dict,ConfigManager:ConfigManager):
+        self.client = None
+        self.HAL = HAL
+        self.CM = ConfigManager
+        self.SvCl = savedClients
+        self.Theme = Theme
+        self.ClientArea = CA
 
+    def Reinit(self,client:DockClient,clid:str,hidden:str):
+        client.ids.append(clid)
+        if hidden == 'false':
+            client.visible[clid] = False
+        else:
+            client.visible[clid] = True
+        client.runned[clid] = True
+
+    def Add(self,IC:str,clid:str,hidden:str):
+        icoPath,title,ico = self.HAL.getClientInfo(IC)
+        icon = QIcon.fromTheme(ico) or QIcon(icoPath) or QIcon.fromTheme(self.HAL._getName(IC).lower()) or QIcon.fromTheme(IC.lower())
+        client = DockClient(self.HAL,title,icon,IC,icoPath=(ico,icoPath),pinned=False,Theme=self.Theme)
+        client.ids.append(clid)
+        if hidden == 'false':
+            client.visible[clid] = False
+        else:
+            client.visible[clid] = True
+        client.runned[clid] = True
+        return client
+    
+    def LoadPinned(self,LoadedClient:dict):
+        IC = LoadedClient['IC']
+        title = LoadedClient['title']
+        ico = LoadedClient['icon']
+        icoPath = LoadedClient['icon-path']
+        icoPath,title,ico 
+        icon = QIcon.fromTheme(ico) or QIcon(icoPath) or QIcon.fromTheme(self.HAL._getName(IC).lower()) or QIcon.fromTheme(IC.lower())
+        client = DockClient(self.HAL,title,icon,IC,icoPath=(ico,icoPath),Theme=self.Theme,pinned=True)
+        return client
+    
+    def SavePinned(self,client:DockClient):
+        SavedClient = {}
+        ico, icoPath = client.iconPath
+        SavedClient['IC'] = client.IC
+        SavedClient['title'] = client.title
+        SavedClient['icon'] = ico
+        SavedClient['icon-path'] = icoPath
+        self.SvCl[client.IC] = SavedClient
+        self.CM.SaveConfig(self.SvCl)
+
+    
+    def Delete(self,client:DockClient):
+        if len(client.ids) > 1:
+            client.ids.remove(id)
+            del client.visible[id]
+            del client.runned[id] 
+        elif len(client.ids) == 1:
+            if not client.pin:
+                self.ClientArea.clientsLayout.removeWidget(client)
+                client.delete()
+                self.ClientArea.reloadAlignment()
+                del self.IC[client.IC]
+            else:
+                client.ids = []
+                client.visible = {}
+                client.runned = {}
+        
 
 class SockServer(QWidget):
     def __init__(self,HAL:HyprAL,Logger:NLLogger):
@@ -586,7 +625,6 @@ class SockServer(QWidget):
             self.hideWindow(IC)
     def unhideWindow(self,IC):
         try:
-            
             clid = self.ICS[IC]
             idActiveWorkspace = json.loads(self.HAL.hyprctl.send(b'j/activeworkspace'))['id']
             unhide = f'dispatch movetoworkspacesilent {idActiveWorkspace},address:{clid}'

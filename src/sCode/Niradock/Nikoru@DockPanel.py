@@ -47,6 +47,8 @@ class DockPanel(QMainWindow):
         self.ClientArea = DockScrollClientArea(None,self.Theme)
         self.ClientArea.setObjectName('DockRootWidget')
         self.ClientManadger = DockClientManager(self.HAL,self.production,self.ClientArea,self.Theme)
+        self.HAL.CAL = self.ClientManadger.CAL
+        self.HAL.SServer = self.ClientManadger.SServer
         self._initRightPanel()
 
         # Собираем все вместе
@@ -72,7 +74,7 @@ class DockPanel(QMainWindow):
         
         self.ScrollLeft.clicked.connect(lambda: self.ClientArea.scroll_to("left"))
         
-        power = DockPower(None,[40,40],self.Theme)
+        power = DockPower(None,[40,40],self.Theme,self.HAL)
         layers = DockWorkspaces(None,None,self.StdIconSize,self.Theme)
         
         leftLayout.addWidget(power)

@@ -7,16 +7,13 @@ import subprocess
 from pathlib import Path 
 import threading
 import socket
-import os
+import sys,os
+sys.path.insert(0,os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import configparser
 from PySide6.QtCore import Signal,QObject
+from Core.NLUtils import NLLogger,ConColors
 
- 
-import socket
-import threading
 
-import socket
-import threading
 
 class HyprSocketEvent:
     def __init__(self, socket_path):
@@ -103,9 +100,6 @@ class HyprSocketEvent:
         except:
             pass
    
-import socket
-import threading
-
 class HyprSocketCtl:
     def __init__(self, socket_path):
         self.socket_path = socket_path
@@ -174,14 +168,15 @@ class HyprAL:
     Описание: Буквально абстракция Hyprland для Python,
     P.S: Этот код вдохновлён дракончиком Нирисом, что до сих пор вдохновляет автора на новые свершения!
     """
-    def __init__(self, debug=False, configPath= "~/.config/NikoruDE/dock.confJs"):
+    def __init__(self, debug=False, CAL= None,SServer = None):
         #debug
-        self.debug = debug
-        if self.debug: print("\033[33mWarning: HAL is running on Debug mode\033[0m")
-        if self.debug: print(f"\033[34mConfig path: {self.configPath}\033[0m")
+        
+        self.CAL= CAL
+        self.SServer = SServer
+        
 
         #paths
-        self.configPath = Path(configPath).expanduser().resolve()
+        
         XDG = os.environ.get("XDG_RUNTIME_DIR")
         SIG = os.environ.get("HYPRLAND_INSTANCE_SIGNATURE")
         SOCK = os.path.join(XDG,"hypr",SIG,".socket.sock")
