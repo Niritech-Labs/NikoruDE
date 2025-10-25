@@ -2,7 +2,7 @@
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
-import json
+import json, os
 from pathlib import Path
 
 
@@ -66,3 +66,36 @@ class NLLogger:
             if productionLatency: print(f"{color} Info: {inf}{ConColors.S}")
         else: print(f"{color} Info{self.name}: {inf}{ConColors.S}")
   
+
+class NLTranslator:
+    def __init__(self,production:bool):
+        self.writemode = False
+        
+        self.Logger = NLLogger(production,'NLTranslator')
+        self.CM = ConfigManager(self.rootpath+'/Settings.confJs',production)
+
+        self.Logger.Info('Started',ConColors.G,False)
+
+        self.rootpath = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+        self.Translation = {}
+        self.launguage = self.CM.LoadConfig()['launguage']
+        self.LoadTranslation()
+
+    def LoadTranslation(self):
+        self.Translation = self.CM.OpenRestricted(self.rootpath+'/Translations/'+self.launguage+'.ntrl')
+
+    def Translate(self,entry:str):
+        try:
+            return self.Translation[entry]
+        except Exception as e:
+            if not self.writemode:
+                self.Logger.Error(str(e)+f", Can't load translation for this entry: {entry}",False)
+                return entry
+            else:
+                self.Translation[entry] = 'writed'
+                self.Logger.Info(f'Entry {entry} writred successfuly')
+                return 'writed'
+
+
+    
