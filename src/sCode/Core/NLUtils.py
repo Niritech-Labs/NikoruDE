@@ -68,18 +68,21 @@ class NLLogger:
   
 
 class NLTranslator:
-    def __init__(self,production:bool):
+    def __init__(self,production:bool,launguage:str):
         self.writemode = False
-        
-        self.Logger = NLLogger(production,'NLTranslator')
-        self.CM = ConfigManager(self.rootpath+'/Settings.confJs',production)
-
-        self.Logger.Info('Started',ConColors.G,False)
 
         self.rootpath = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
+        self.Logger = NLLogger(production,'NLTranslator')
+        self.CM = ConfigManager(self.rootpath+'/Settings.confJs',production)
+        if launguage == 'Config':
+            self.launguage = self.CM.LoadConfig()['launguage']
+        else:
+            self.launguage = launguage
+
+        self.Logger.Info('Started',ConColors.G,False)
+
         self.Translation = {}
-        self.launguage = self.CM.LoadConfig()['launguage']
         self.LoadTranslation()
 
     def LoadTranslation(self):
