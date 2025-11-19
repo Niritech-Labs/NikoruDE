@@ -7,8 +7,8 @@ from pathlib import Path
 
 
 class ConfigManager():
-    def __init__(self,path,produttion:bool):
-        self.Logger = NLLogger(produttion,"ConfigManager")
+    def __init__(self,path,production:bool):
+        self.Logger = NLLogger(production,"ConfigManager")
         self.configPath = Path(path).expanduser().resolve()
 
     def LoadConfig(self) -> dict: 
@@ -29,11 +29,26 @@ class ConfigManager():
         except:
             self.Logger.Error(f"Can't load this config:{path}",False)
             return None
+        
+    def SaveRestricted(self,path:str,dataToSave:dict):
+        try:
+            resPath = Path(path).expanduser().resolve()
+            if not resPath.exists(): resPath.parent.mkdir(parents=True,exist_ok=True)
+            with open(resPath, 'w', encoding='utf-8') as file:
+                json.dump(dataToSave, file, ensure_ascii=False, indent=4)
 
-    def SaveConfig(self,configD):
-        if not self.configPath.exists(): self.configPath.parent.mkdir(parents=True,exist_ok=True)
-        with open(self.configPath, 'w', encoding='utf-8') as file:
-            json.dump(configD, file, ensure_ascii=False, indent=4)
+            self.Logger.Info(f'Saved restricted config {str(resPath)}',ConColors.V,False)
+        except Exception as e:
+            self.Logger.Error(str(e)+f", Can't save this config:{str(resPath)}",False)
+
+    def SaveConfig(self,dataToSave):
+        try:
+            if not self.configPath.exists(): self.configPath.parent.mkdir(parents=True,exist_ok=True)
+            with open(self.configPath, 'w', encoding='utf-8') as file:
+                json.dump(dataToSave, file, ensure_ascii=False, indent=4)
+            self.Logger.Info(f'Saved main config {str(self.configPath)}',ConColors.V,False)
+        except Exception as e:
+            self.Logger.Error(str(e)+f", Can't save this config:{str(self.configPath)}",False)
 
 
 class ConColors: 
@@ -68,17 +83,17 @@ class NLLogger:
   
 
 class NLTranslator:
-    def __init__(self,production:bool,launguage:str):
+    def __init__(self,production:bool,language:str):
         self.writemode = False
 
         self.rootpath = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
         self.Logger = NLLogger(production,'NLTranslator')
         self.CM = ConfigManager(self.rootpath+'/Settings.confJs',production)
-        if launguage == 'Config':
-            self.launguage = self.CM.LoadConfig()['launguage']
+        if language == 'Config':
+            self.language = self.CM.LoadConfig()['language']
         else:
-            self.launguage = launguage
+            self.language = language
 
         self.Logger.Info('Started',ConColors.G,False)
 
@@ -86,7 +101,7 @@ class NLTranslator:
         self.LoadTranslation()
 
     def LoadTranslation(self):
-        self.Translation = self.CM.OpenRestricted(self.rootpath+'/Translations/'+self.launguage+'.ntrl')
+        self.Translation = self.CM.OpenRestricted(self.rootpath+'/Translations/'+self.language+'.ntrl')
 
     def Translate(self,entry:str):
         try:
@@ -96,9 +111,9 @@ class NLTranslator:
                 self.Logger.Error(str(e)+f", Can't load translation for this entry: {entry}",False)
                 return entry
             else:
-                self.Translation[entry] = 'writed'
-                self.Logger.Info(f'Entry {entry} writred successfuly')
-                return 'writed'
+                self.Translation[entry] = 'writen'
+                self.Logger.Info(f'Entry {entry} writen successfuly',ConColors.B,False)
+                return 'writen'
 
 
     

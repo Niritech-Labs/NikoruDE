@@ -4,7 +4,7 @@
 # the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 import sys, os
 sys.path.insert(0,os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
-from Core.NLUtils import NLLogger,ConColors
+from Utils.NLUtils import NLLogger,ConColors
 from pathlib import Path
 
 class NSClientRules():
@@ -16,7 +16,7 @@ class NSClientRules():
     def Write(self,rules:list):
         rulesv2 = ''
         for rule in rules:
-            rulesv2 = rulesv2 + "windowrulev2 = "+rule+'\n'
+            rulesv2 = rulesv2 + "windowrulev2 ="+rule+'\n'
         with open(self.path, 'w', encoding='utf-8') as file:
             file.write(rulesv2)
     def Read(self) -> list:
@@ -42,7 +42,7 @@ class NSessionEnviroments():
     def Write(self,envs:list):
         envsw = ''
         for env in envs:
-            envsw = envsw + "env = "+env+'\n'
+            envsw = envsw + "env ="+env+'\n'
         with open(self.path, 'w', encoding='utf-8') as file:
             file.write(envsw)
     def Read(self) -> list:
@@ -68,7 +68,7 @@ class NSessionAutostart():
     def Write(self,srvcs:list):
         srvcw = ''
         for srvc in srvcs:
-            srvcw = srvcw + "exec-once = "+srvc+'\n'
+            srvcw = srvcw + "exec-once ="+srvc+'\n'
         with open(self.path, 'w', encoding='utf-8') as file:
             file.write(srvcw)
     def Read(self) -> list:
@@ -94,7 +94,7 @@ class NKeyBindings():
     def Write(self,srvcs:list):
         srvcw = ''
         for srvc in srvcs:
-            srvcw = srvcw + "key = "+srvc+'\n'
+            srvcw = srvcw + "key ="+srvc+'\n'
         with open(self.path, 'w', encoding='utf-8') as file:
             file.write(srvcw)
     def Read(self) -> list:
@@ -120,7 +120,7 @@ class NMonitors():
     def Write(self,dsetings:list):
         dsetingsw = ''
         for dseting in dsetings:
-            dsetingsw = dsetingsw + "monitor = "+dseting+'\n'
+            dsetingsw = dsetingsw + "monitor ="+dseting+'\n'
         with open(self.path, 'w', encoding='utf-8') as file:
             file.write(dsetingsw)
     def Read(self) -> list:
@@ -149,7 +149,7 @@ class NInputDevices():
     def Write(self,input:dict):
         inputset = input
         
-        settingsmb = 'input {\n' + f'kb_layout = {inputset['layouts']} \n' + f'kb_options = {inputset['keybind']} \n' + f'follow_mouse = {inputset['follow-mouse']} \n' + f'sensitivity = {inputset['mouse-sensitivity']} \n'
+        settingsmb = 'input {\n' + f'kb_layout ={inputset['layouts']} \n' + f'kb_options ={inputset['keybind']} \n' + f'follow_mouse ={inputset['follow-mouse']} \n' + f'sensitivity ={inputset['mouse-sensitivity']} \n'
         settingsstr = settingsmb + '\n}'
         with open(self.path, 'w', encoding='utf-8') as file:
             file.write(settingsstr)
@@ -197,24 +197,24 @@ class NCompositorAppereance():
         for key in hyprbar:
             if key == 'bbuttons':
                 for button in hyprbar['bbuttons']:
-                    settings = settings + 'hyprbars-button = ' + button + '\n'
+                    settings = settings + 'hyprbars-button =' + button + '\n'
             else:
-                settings = settings + key + ' = ' + hyprbar[key] + '\n'
+                settings = settings + key + ' =' + hyprbar[key] + '\n'
         settings = settings + '}\n}\ngeneral {\n'
         for key in general:
-            settings = settings + key + ' = ' + general[key] + '\n'
+            settings = settings + key + ' =' + general[key] + '\n'
         settings = settings + '}\ndecoration {\n'
         for key in decoration:
-            settings = settings + key + ' = ' + decoration[key] + '\n'
+            settings = settings + key + ' =' + decoration[key] + '\n'
         settings = settings + 'shadow {\n'
         for key in shadow:
-            settings = settings + key + ' = ' + shadow[key] + '\n'
+            settings = settings + key + ' =' + shadow[key] + '\n'
         settings = settings + '}\nblur {\n'
         for key in blur:
-            settings = settings + key + ' = ' + blur[key] + '\n'
+            settings = settings + key + ' =' + blur[key] + '\n'
         settings = settings + '}\n}\ndwindle {\n'
         for key in dwindle:
-            settings = settings + key + ' = ' + dwindle[key] + '\n'
+            settings = settings + key + ' =' + dwindle[key] + '\n'
         settings = settings + '}\nmaster {\nnew_status = master \n}\nmisc {\nforce_default_wallpaper = -1\ndisable_hyprland_logo = false\n}\ngestures {\nworkspace_swipe = false \n}\n'
 
         with open(self.path, 'w', encoding='utf-8') as file:
@@ -300,9 +300,9 @@ class NSessionAnimations():
         animsa = anims['animation']
         animsw = 'animations { \n' + 'enabled = yes, please :) \n'
         for animb in animsb:
-            animsw = animsw + "bezier = "+animb+'\n'
+            animsw = animsw + "bezier ="+animb+'\n'
         for anima in animsa:
-            animsw = animsw + "animation = "+anima+'\n'
+            animsw = animsw + "animation ="+anima+'\n'
         animsw = animsw + '} \n'
         with open(self.path, 'w', encoding='utf-8') as file:
             file.write(animsw)

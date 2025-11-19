@@ -2,19 +2,17 @@
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
-import sys,os
-sys.path.insert(0,os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 from PySide6.QtCore import Qt, QSize, QPropertyAnimation, QEasingCurve,QPoint,QEvent,QTimer,QLocale,QDateTime,Signal,QObject
 from PySide6.QtWidgets import QWidget, QPushButton,QHBoxLayout, QScrollArea, QSizePolicy, QSpacerItem, QToolTip,QMenu
 from PySide6.QtGui import QIcon
 from PySide6.QtNetwork import QLocalServer
 from Core.CoreHAL import HyprAL,WorkspacesHAL,EventBridge
 from Core.CoreIAL import InterAL
-from Core.NLUtils import ConfigManager
 import json
 import subprocess
 from pathlib import Path
-from Core.NLUtils import NLLogger,ConColors
+from Utils.NLUtils import NLLogger,ConColors, ConfigManager
 
 
 

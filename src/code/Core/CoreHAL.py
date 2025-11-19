@@ -11,7 +11,8 @@ import sys,os
 sys.path.insert(0,os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import configparser
 from PySide6.QtCore import Signal,QObject
-from Core.NLUtils import NLLogger,ConColors
+
+from Utils.NLUtils import NLLogger,ConColors
 
 
 

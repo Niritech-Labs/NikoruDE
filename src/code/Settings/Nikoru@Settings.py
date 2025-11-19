@@ -52,7 +52,7 @@ class Settings(BaseWindow):
 
         self.TabButtonGroup = QButtonGroup(self)
         self.TabButtonGroup.setExclusive(True)
-        self.setStyleSheet(self.TM.ThemeLoad()['main'])
+        self.setStyleSheet(self.TM.GetTheme()['main'])
         self._InitPlugins()
 
         

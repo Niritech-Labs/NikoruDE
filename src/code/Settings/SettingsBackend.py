@@ -6,7 +6,7 @@ import os
 import sys
 sys.path.insert(0,os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from Settings.Config.ConfigModules import *
-from Core.NLUtils import NLLogger, ConfigManager, ConColors
+from Utils.NLUtils import NLLogger, ConfigManager, ConColors
 import dbus
 import threading
 import json
@@ -164,6 +164,10 @@ class SettingsBackend:
         self.ReadedConfig["NSessionAutostart"] = self.NSessionAutostart.Read()
         self.ReadedConfig["NCompositorAppereance"] = self.NCompositorAppereance.Read()
         self.ReadedConfig["NSessionAnimations"] = self.NSessionAnimations.Read()
+        self.AllSettings = self.CM.LoadConfig()
+        self.ReadedConfig['system-style'] = self.AllSettings['system-style']
+        self.ReadedConfig['settings-plugins'] = self.AllSettings['settings-plugins']
+        self.AllSettings = {}
         
     def WriteConfig(self):
         self.NSessionEnviroments.Write(self.AllSettings["NSessionEnviroments"])
