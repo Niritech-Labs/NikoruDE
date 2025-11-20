@@ -201,17 +201,7 @@ class HyprAL:
         try: return os.readlink(f'/proc/{pid}/exe')
         except Exception as e: print('\033[33mGet path error:\033[0m',e); return None
 
-    def getClientInfo(self,initialClass:str):
-        appPath = f'/usr/share/applications/{initialClass.lower()}.desktop'
-        pathI = "/usr/share/icons/hicolor"
-        name, icon = self._getAppData(appPath)
-        svg = os.path.join(pathI,f"scalable/apps/{icon}.svg")
-        png = os.path.join(pathI,f"32x32/apps/{icon}.png")
-        if os.path.exists(svg):
-            return svg,name,icon
-        elif os.path.exists(png):
-            return png,name,icon
-        return "",name,icon
+   
 
     def _getName(self,Iclass:str):
         if '.' in Iclass:

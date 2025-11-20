@@ -1,8 +1,8 @@
 {
-    "Author": "Niris",
+    "Author": "Niris & Lakur Fessi & Artur Kufterin",
     "Name": "Daylight",
     "Description": "Standard Light theme Nikoru desktop environment",
-    "DE": "/usr/share/NikoruDE/Other/Themes/Daylight/Daylight.qssJs",
-    "GTK": "/usr/share/NikoruDE/Other/Themes/Daylight/GTK",
-    "QT": "/usr/share/NikoruDE/Other/Themes/Daylight/QT"
+    "DE": "/usr/share/Nikoru/Other/Themes/Daylight/Daylight.qssJs",
+    "GTK": "/usr/share/Nikoru/Other/Themes/Daylight/GTK",
+    "QT": "/usr/share/Nikoru/Other/Themes/Daylight/QT"
 }

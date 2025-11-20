@@ -1,27 +1,31 @@
-import os
+import os, sys
+sys.path.insert(0,os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import subprocess 
 import configparser
 import shutil
 from Utils.NLUtils import NLLogger,ConfigManager,ConColors
+
+
 C_NIKORU_THEME_NAME = 'NikoruBase'
-C_ICON_SIZES = ['32x32','16x16','64x64','48x48','128x128','scallable']
+C_ICON_SIZES = ['32x32','16x16','64x64','48x48','128x128','scalable','pixmap']
 C_PRODUCTION = False
 class ClientDesktopFileManager:
 	def __init__(self):
-		pass
+		self.LOG = NLLogger(C_PRODUCTION,"CDFM")
+		self.LOG.Info('Started',ConColors.G,False)
 		
 	def GetClientDesktopInfo(self,initialClass:str,resolution:str):
-		clientDesktopFile = ClientDesktopFileParser(f'/usr/share/applications/{initialClass}.desktop')
+		clientDesktopFile = ClientDesktopFileParser(f'/usr/share/applications/{initialClass.lower()}.desktop',self.LOG)
 		if not '/' in clientDesktopFile.clientIcon:
-			iconPath = self.Find(clientDesktopFile.clientIcon,resolution)
+			iconPath = self.find(clientDesktopFile.clientIcon,resolution)
 		elif not clientDesktopFile.clientIcon == None: 
-			iconPath = clientDesktopFile.clientIcon
+			iconPath = f"/usr/share/icons/{C_NIKORU_THEME_NAME}/other/{os.path.basename(clientDesktopFile.clientIcon)}"
 		else: 
-			iconPath = self.Find(clientDesktopFile.clientIcon,resolution)
+			iconPath = self.find(clientDesktopFile.clientIcon,resolution)
 
 		return (iconPath, clientDesktopFile.clientExec,clientDesktopFile.clientTitle)
 	
-	def Find(self, name, scale):
+	def find(self, name, scale):
 		if os.path.exists(f"/usr/share/icons/{C_NIKORU_THEME_NAME}/scalable/{name}.svg"):
 			return f"/usr/share/icons/{C_NIKORU_THEME_NAME}/scalable/{name}.svg"
 		
@@ -34,7 +38,13 @@ class ClientDesktopFileManager:
 		if os.path.exists(f"/usr/share/icons/{C_NIKORU_THEME_NAME}/other/{name}.svg"):
 			return f"/usr/share/icons/{C_NIKORU_THEME_NAME}/other/{name}.svg"
 		
-		return f"/usr/share/icons/{C_NIKORU_THEME_NAME}/scalable/notFound.svg"
+		if os.path.exists(f"/usr/share/icons/{C_NIKORU_THEME_NAME}/other/{name}.png"):
+			return f"/usr/share/icons/{C_NIKORU_THEME_NAME}/other/{name}.png"
+		
+		if os.path.exists(f"/usr/share/icons/{C_NIKORU_THEME_NAME}/pixmap/{name}.png"):
+			return f"/usr/share/icons/{C_NIKORU_THEME_NAME}/pixmap/{name}.png"
+		
+		return f"/usr/share/icons/{C_NIKORU_THEME_NAME}/standard/notFound.svg"
 	
 	
 	@staticmethod
@@ -43,103 +53,136 @@ class ClientDesktopFileManager:
 		return CM.LoadConfig()['Theme']
 		
 class ClientDesktopFileParser:
-	def __init__(self,path:str):
+	def __init__(self,path:str,Logger:NLLogger):
 		self.clientExec = None
 		self.clientTitle = None
 		self.clientIcon = None
 		self.file = path
-		self.GetFields()
+		self.LOG = Logger
+		self.getFields()
 
-	def GetFields(self):
-		parser = configparser.ConfigParser()
+	def getFields(self):
+		parser = configparser.ConfigParser(interpolation=None)
 		parser.optionxform = str
 		try:
 			parser.read(self.file,encoding='utf-8')
 		except Exception as e:
-			NLLogger.Error(e, False)
+			self.LOG.Error(e, False)
 		
 		if not "Desktop Entry" in parser:
-			NLLogger.Error("Desktop Entry not in desktop file", False)
+			self.LOG.Error("Desktop Entry not in desktop file", False)
 		else:
 			section = parser['Desktop Entry'] 
 			self.clientExec = section.get('Exec','')
 			self.clientTitle = section.get('Name','')
 			self.clientIcon = section.get('Icon','')
+			
 		
 
-class UpdateChache:
+class UpdateCache:
 	def __init__(self):
 		self.LOG = NLLogger(C_PRODUCTION,'DNF Update Nikoru icon chahe addon')
 		self.LOG.Info('Started',ConColors.G,False)
-		self.CM = ConfigManager(f"/usr/share/icons/{C_NIKORU_THEME_NAME}/icons.chache")
+		self.CM = ConfigManager(f"/usr/share/icons/{C_NIKORU_THEME_NAME}/icons.chache",False)
 		
 
 	def loadChache(self):
-		chache = self.CM.LoadConfig()
-		return chache['list']
+		cache = self.CM.LoadConfig()
+		try:
+			return cache['list']
+		except KeyError:
+			self.saveChache([])
+			return []
+
 	
-	def saveChache(self,chache):
-		chache['list'] = chache
-		self.CM.SaveConfig(chache)
+	def saveChache(self,toCache):
+		cache = {}
+		cache['list'] = toCache
+		self.CM.SaveConfig(cache)
 
 	def getThemes(self) -> list:
 		themes = []
 		with os.scandir('/usr/share/icons') as AllIconThemes:
 			for file in AllIconThemes:
-				if (not file.name == C_NIKORU_THEME_NAME) and file.is_dir():
+				if (not file.name == C_NIKORU_THEME_NAME) and file.is_dir() and (not file.name == 'hicolor'):
 					themes.append(file.name)
 		return themes
 	
 	def Update(self):
-		newChache,customIcons = self.load()
-		oldChache = self.loadChache()
-
-		if not self.filesChanged(newChache+customIcons,oldChache):
-			return
-		for iconName in newChache:
-			hicolor, other = self.legacyFind(iconName,C_ICON_SIZES,self.getThemes())
-			if 'scallable' in hicolor:
-				self.CreateStandartSymlink(hicolor['scallable'],'scallable')
-			elif 'scallable' in other:
-				self.CreateStandartSymlink(other['scallable'],'scallable')
-			hicolor['scallable'] = None
-			other['scallable'] = None
-			for type in hicolor:
-				self.CreateStandartSymlink(other[type],type)
-				other[type] = None
-			for type in other:
-				self.CreateStandartSymlink(other[type],type)
-		for iconPath in customIcons:
-			self.CreateOtherSymlink(iconPath)
-
-		self.CM.SaveConfig(self.saveChache(newChache+customIcons))
-	
-	def removeSymlinks(self,path):
-		for scale in C_ICON_SIZES:
-			path = f'/usr/share/icons/{C_NIKORU_THEME_NAME}/{scale}'
-			shutil.rmtree(path)
-			os.makedirs(path,mode=0o755)
-
+		newCache,customIcons = self.load()
+		oldCache = self.loadChache()
 		
-	def filesChanged(list1:list,list2:list) -> bool:
+
+		if not self.filesChanged(newCache+customIcons,oldCache):
+			return
+		self.removeSymlinks()
+		
+		for iconName in newCache:
+			hicolor, other = self.legacyFind(iconName,C_ICON_SIZES,self.getThemes())
+			if 'scalable' in hicolor:
+				self.createStandartSymlink(hicolor['scalable'],'scalable')
+			elif 'scalable' in other:
+				self.createStandartSymlink(other['scalable'],'scalable')
+			if 'scalable' in hicolor: 
+				del hicolor['scalable']
+			if 'pixmap' in other:
+				del other['pixmap'] 
+			if 'scalable' in other: 
+				del other['scalable'] 
+			for iconType in hicolor:
+				self.createStandartSymlink(hicolor[iconType],iconType)
+				if iconType in other:
+					del other[iconType] 
+			for iconType in other:
+				self.createStandartSymlink(other[iconType],iconType)
+		for iconPath in customIcons:
+			self.createOtherSymlink(iconPath)
+
+		self.saveChache(newCache+customIcons)
+
+	
+	def removeSymlinks(self):
+		try:
+			for scale in C_ICON_SIZES:
+				path = f'/usr/share/icons/{C_NIKORU_THEME_NAME}/{scale}'
+				shutil.rmtree(path)
+				os.makedirs(path,mode=0o755)
+		except FileNotFoundError:
+			os.makedirs(path,mode=0o755)
+		except Exception as E:
+			self.LOG.Error("Remove Symlinks: "+str(E),False)
+		
+	def filesChanged(self, list1:list,list2:list) -> bool:
 		return not set(list1) == set(list2)
 
-	def CreateOtherSymlink(self, path):
-		os.symlink(path,f"/usr/share/icons/{C_NIKORU_THEME_NAME}/other/{os.path.basename(path)}")
+	def createOtherSymlink(self, path):
+		try:
+			os.symlink(path,f"/usr/share/icons/{C_NIKORU_THEME_NAME}/other/{os.path.basename(path)}")
+		except Exception as E:
+			self.LOG.Error("Create other Symlinks: "+str(E),False)
 		
-	def CreateStandartSymlink(self,path,scale):
-		os.symlink(path,f"/usr/share/icons/{C_NIKORU_THEME_NAME}/{scale}/{os.path.basename(path)}")
+	def createStandartSymlink(self,path,scale):
+		try:
+			os.symlink(path,f"/usr/share/icons/{C_NIKORU_THEME_NAME}/{scale}/{os.path.basename(path)}")
+		except FileExistsError:
+			pass
+		except Exception as E:
+			self.LOG.Error("Create standard Symlinks: "+str(E),False)
 
 	def load(self):
 		iconNameList = []
 		customPaths = []
-		with os.scandir('/usr/share/applications') as AllDesktopfiles:
-			for file in AllDesktopfiles:
-				Desktopfile = ClientDesktopFileParser(file.path)
-				if '/' in Desktopfile.clientIcon:
-					customPaths.append(Desktopfile.clientIcon)
-				else:
-					iconNameList.append(Desktopfile.clientIcon)
+		try:
+			with os.scandir('/usr/share/applications') as AllDesktopfiles:
+				for file in AllDesktopfiles:
+					if (not os.path.isdir(file)) and '.desktop' in os.path.basename(file):
+						Desktopfile = ClientDesktopFileParser(file.path,self.LOG)
+						if '/' in Desktopfile.clientIcon:
+							customPaths.append(Desktopfile.clientIcon)
+						else:
+							iconNameList.append(Desktopfile.clientIcon)
+		except Exception as E:
+			self.LOG.Error('Desktop Load: '+str(E),False)
 
 
 		return iconNameList,customPaths
@@ -148,16 +191,23 @@ class UpdateChache:
 		iconsOther = {}
 		iconsHicolor = {}
 		for theme in themes:
-			if os.path.exists(f"/usr/share/icons/{theme}/scallable/{name}.svg"):
-				iconsOther['scallable'] = f"/usr/share/icons/{theme}/scalable/{name}.svg"
+			if os.path.exists(f"/usr/share/icons/{theme}/scalable/apps/{name}.svg"):
+				iconsOther['scalable'] = f"/usr/share/icons/{theme}/scalable/apps/{name}.svg"
 			for scale in scales:
-				if os.path.exists(f"/usr/share/icons/{theme}/{scale}/{name}.png"):
-					iconsOther[scale] = f"/usr/share/icons/{theme}/{scale}/{name}.png"
-		if os.path.exists(f"/usr/share/icons/hicolor/scallable/{name}.svg"):
-				iconsHicolor['scallable'] = f"/usr/share/icons/hicolor/scallable/{name}.svg"
+				if os.path.exists(f"/usr/share/icons/{theme}/{scale}/apps/{name}.png"):
+					iconsOther[scale] = f"/usr/share/icons/{theme}/{scale}/apps/{name}.png"
+
+		if os.path.exists(f"/usr/share/pixmaps/{name}.png"):
+			iconsHicolor['pixmap'] = f"/usr/share/pixmaps/{name}.png"
+
+		if os.path.exists(f"/usr/share/icons/hicolor/scalable/apps/{name}.svg"):
+			iconsHicolor['scalable'] = f"/usr/share/icons/hicolor/scalable/apps/{name}.svg"
+
+		
+
 		for scale in scales:
-			if os.path.exists(f"/usr/share/icons/hicolor/{scale}/{name}.png"):
-				iconsHicolor[scale] = f"/usr/share/icons/hicolor/{scale}/{name}.png"
+			if os.path.exists(f"/usr/share/icons/hicolor/{scale}/apps/{name}.png"):
+				iconsHicolor[scale] = f"/usr/share/icons/hicolor/{scale}/apps/{name}.png"
 		
 		return iconsHicolor, iconsOther
 			
@@ -165,33 +215,50 @@ class UpdateChache:
 class NikoruThemeManager:
 	def __init__(self,themeSettingsBlock: dict,production: bool):
 		self.LOG = NLLogger(production,"ThemeManager")
-		self.themeSettingsBlock = themeSettingsBlock
 		self.CM = ConfigManager('',production)
+
+		self.themeSettingsBlock = themeSettingsBlock
+
+		self.systemThemeName = self.themeSettingsBlock['system']
 		if not self.themeSettingsBlock['user'] == '':
-			self.themeName = self.themeSettingsBlock['user']
+			self.currentThemeName = self.themeSettingsBlock['user']
 		else:
-			self.themeName = self.themeSettingsBlock['system']
-		self.loadTheme(self.themeName)
+			self.currentThemeName = self.themeSettingsBlock['system']
+		self.loadTheme(self.currentThemeName)
 
 	def loadTheme(self,themeName):
 		try:
 			if not self.themeSettingsBlock['user'] == None:
-				self.AllPaths = self.CM.OpenRestricted(f"/usr/share/NikoruDE/Other/Themes/{themeName}/{themeName}.ntc")
+				return self.CM.OpenRestricted(f"/usr/share/Nikoru/Other/Themes/{themeName}/{themeName}.ntc")
 			else:
-				self.AllPaths = self.CM.OpenRestricted(f"~/.local/share/nikoru/themes/{themeName}/{themeName}.ntc")
+				return self.CM.OpenRestricted(f"~/.local/share/nikoru/themes/{themeName}/{themeName}.ntc")
 		except Exception as e:
-			self.LOG.Error (e, True)
+			self.LOG.Error(e, True)
+			return None
 
 	def GTK_QT_Reload(self):
-		subprocess.run([self.AllPaths["GTK"]],waitAnswer = True)
-		subprocess.run([self.AllPaths["QT"]],waitAnswer = True)
+		subprocess.run([self.allPathsInNTC["GTK"]],waitAnswer = True)
+		subprocess.run([self.allPathsInNTC["QT"]],waitAnswer = True)
 
 	def GetTheme(self) -> dict:
-		self.loadTheme(self.themeName)
-		theme = self.CM.OpenRestricted(self.AllPaths["DE"])
+		try:
+			allPathsInNTC = self.loadTheme(self.currentThemeName)
+			theme = self.CM.OpenRestricted(allPathsInNTC["DE"])
+			self.LOG.Info(f'Loaded theme {self.currentThemeName}',ConColors.G,False)
+		except Exception:
+			self.LOG.Warning(f"Failed to load theme: {self.currentThemeName}, try to load another theme.")
+			try:
+				allPathsInNTC = self.loadTheme(self.systemThemeName)
+				theme = self.CM.OpenRestricted(allPathsInNTC["DE"])
+				self.LOG.Info(f'Loaded theme {self.systemThemeName}',ConColors.G,False)
+			except Exception:
+				theme = None
+
 		if not theme == None:
 			return theme
 		else:
-			###################################################### <- TO UPDATE
-			self.LOG.Error("Failed to load theme, Exiting.", True)
-			######################################################
+			self.LOG.Error("Failed to load themes, Exiting.", True)
+			
+if __name__ == "__main__":
+	UC = UpdateCache()
+	UC.Update()

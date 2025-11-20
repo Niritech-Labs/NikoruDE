@@ -7,7 +7,7 @@ sys.path.insert(0,os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from PySide6.QtWidgets import QMainWindow, QWidget,QSizePolicy,QHBoxLayout,QVBoxLayout
 from PySide6.QtNetwork import QLocalSocket
 from PySide6.QtCore import QEvent
-from Core.NLUtils import NLLogger
+from Utils.NLUtils import NLLogger
 
 
 

@@ -11,7 +11,8 @@ from Core.CoreHAL import HyprAL
 from Core.CoreStyle import NikoruThemeManager
 from Utils.NLUtils import NLLogger, ConColors
 from Settings.SettingsBackend import SettingsBackend
-from Niradock.Modules.DockPanelWidgets import DockClientManager,DockSettings,DockTime,DockScrollClientArea,DockSVG,DockTerminal,DockInternet,DockPower,DockWorkspaces
+from Niradock.Modules.DockPanelWidgets import DockSettings,DockTime,DockScrollClientArea,DockSVG,DockTerminal,DockInternet,DockPower,DockWorkspaces
+from Niradock.Modules.ClientManager import DockClientManager
 
 
 class DockPanel(QMainWindow):
@@ -26,10 +27,9 @@ class DockPanel(QMainWindow):
         self.LOG.Info("started",ConColors.B,False)
         ###################################################################
         # Settings init/load theme/load lang
-        self.SettingsBackend = SettingsBackend(False,self.C_PRODUCTION)
-        self.SettingsBackend.LoadConfig()
+        self.ABConfig = SettingsBackend.GetConfig()
         # Load Theme
-        self.ThemeManager = NikoruThemeManager(self.SettingsBackend.AllSettings['system-style'],self.C_PRODUCTION)
+        self.ThemeManager = NikoruThemeManager(self.ABConfig['system-style'],self.C_PRODUCTION)
         self.theme = self.ThemeManager.GetTheme()
         #init Hyprald Abstraction Layer
         self.HAL = HyprlandAbstractionlayer

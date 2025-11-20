@@ -8,7 +8,7 @@ from pathlib import Path
 
 class ConfigManager():
     def __init__(self,path,production:bool):
-        self.Logger = NLLogger(production,"ConfigManager")
+        self.LOG = NLLogger(production,"ConfigManager")
         self.configPath = Path(path).expanduser().resolve()
 
     def LoadConfig(self) -> dict: 
@@ -16,7 +16,7 @@ class ConfigManager():
             with open(self.configPath, 'r', encoding='utf-8') as file:
                 return json.load(file) 
         except:
-            self.Logger.Info("Can't load saved config,creatig new",ConColors.S,False)
+            self.LOG.Info("Can't load saved config,creatig new",ConColors.S,False)
             defconf = {}
             self.SaveConfig(defconf)
             return defconf
@@ -27,7 +27,7 @@ class ConfigManager():
             with open(path, 'r', encoding='utf-8') as file:
                 return json.load(file) 
         except:
-            self.Logger.Error(f"Can't load this config:{path}",False)
+            self.LOG.Error(f"Can't load this config:{path}",False)
             return None
         
     def SaveRestricted(self,path:str,dataToSave:dict):
@@ -37,18 +37,18 @@ class ConfigManager():
             with open(resPath, 'w', encoding='utf-8') as file:
                 json.dump(dataToSave, file, ensure_ascii=False, indent=4)
 
-            self.Logger.Info(f'Saved restricted config {str(resPath)}',ConColors.V,False)
+            self.LOG.Info(f'Saved restricted config {str(resPath)}',ConColors.V,False)
         except Exception as e:
-            self.Logger.Error(str(e)+f", Can't save this config:{str(resPath)}",False)
+            self.LOG.Error(str(e)+f", Can't save this config:{str(resPath)}",False)
 
     def SaveConfig(self,dataToSave):
         try:
             if not self.configPath.exists(): self.configPath.parent.mkdir(parents=True,exist_ok=True)
             with open(self.configPath, 'w', encoding='utf-8') as file:
                 json.dump(dataToSave, file, ensure_ascii=False, indent=4)
-            self.Logger.Info(f'Saved main config {str(self.configPath)}',ConColors.V,False)
+            self.LOG.Info(f'Saved main config {str(self.configPath)}',ConColors.V,False)
         except Exception as e:
-            self.Logger.Error(str(e)+f", Can't save this config:{str(self.configPath)}",False)
+            self.LOG.Error(str(e)+f", Can't save this config:{str(self.configPath)}",False)
 
 
 class ConColors: 
@@ -61,46 +61,62 @@ class ConColors:
 
 
 class NLLogger:
-    def __init__(self, production: bool, ComponentName: str = ''):
+    def __init__(self, production: bool, ComponentName: str = '',logList:list = ['toConsole']):
         self.production = production
+        self.toLogList = False
+        self.logList = logList
+        if not 'toConsole' in logList:
+            self.toLogList = True
         self.name = " " + ComponentName 
 
     def Warning(self,warn: str):
+        if self.toLogList:
+            self.logList.append(f"{ConColors.Y} Warning{self.name}: {warn}{ConColors.S}")
         print(f"{ConColors.Y} Warning{self.name}: {warn}{ConColors.S}")
 
 
     def Error(self,err:str,critical:bool):
         if critical:
+            if self.toLogList:
+                self.logList.append(f"{ConColors.R} Critical Error{self.name}: {err}{ConColors.S}")
             print(f"{ConColors.R} Critical Error{self.name}: {err}{ConColors.S}")
             exit(1)
         else:
+            if self.toLogList:
+                self.logList.append(f"{ConColors.R} Error{self.name}: {err}{ConColors.S}")
             print(f"{ConColors.R} Error{self.name}: {err}{ConColors.S}")
     
     def Info(self,inf:str,color: ConColors, productionLatency: bool):
         if self.production:
-            if productionLatency: print(f"{color} Info: {inf}{ConColors.S}")
-        else: print(f"{color} Info{self.name}: {inf}{ConColors.S}")
+            if productionLatency: 
+                if self.toLogList:
+                    self.logList.append(f"{color} Info{self.name}: {inf}{ConColors.S}")
+                print(f"{color} Info{self.name}: {inf}{ConColors.S}")
+        else:
+            if self.toLogList:
+                self.logList.append(f"{color} Info{self.name}: {inf}{ConColors.S}")
+            print(f"{color} Info{self.name}: {inf}{ConColors.S}")
   
 
 class NLTranslator:
-    def __init__(self,production:bool,language:str):
-        self.writemode = False
+    def __init__(self,production:bool,language:str,WRITEMODE = False):
+        self.writemode = WRITEMODE
 
         self.rootpath = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-        self.Logger = NLLogger(production,'NLTranslator')
+        self.LOG = NLLogger(production,'NLTranslator')
         self.CM = ConfigManager(self.rootpath+'/Settings.confJs',production)
         if language == 'Config':
             self.language = self.CM.LoadConfig()['language']
         else:
             self.language = language
 
-        self.Logger.Info('Started',ConColors.G,False)
+        self.LOG.Info('Started',ConColors.G,False)
 
         self.Translation = {}
-        self.LoadTranslation()
+        self.loadTranslation()
 
-    def LoadTranslation(self):
+    def loadTranslation(self):
         self.Translation = self.CM.OpenRestricted(self.rootpath+'/Translations/'+self.language+'.ntrl')
 
     def Translate(self,entry:str):
@@ -108,11 +124,11 @@ class NLTranslator:
             return self.Translation[entry]
         except Exception as e:
             if not self.writemode:
-                self.Logger.Error(str(e)+f", Can't load translation for this entry: {entry}",False)
+                self.LOG.Error(str(e)+f", Can't load translation for this entry: {entry}",False)
                 return entry
             else:
                 self.Translation[entry] = 'writen'
-                self.Logger.Info(f'Entry {entry} writen successfuly',ConColors.B,False)
+                self.LOG.Info(f'Entry {entry} writen successfuly',ConColors.B,False)
                 return 'writen'
 
 
