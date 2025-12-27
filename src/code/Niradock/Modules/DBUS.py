@@ -7,19 +7,19 @@ from PySide6.QtNetwork import QLocalServer
 
 import json
 
-from Utils.NLUtils import NLLogger
+from NLUtils.Logger import NLLogger
 from Core.CoreHAL import HyprAL
 
 class SockServer(QWidget):
-    def __init__(self,HAL:HyprAL,Logger:NLLogger):
+    def __init__(self,HAL:HyprAL,Logger:NLLogger,ICS:dict):
         super().__init__(None)
         
-        self.ICS = {}
+        self.ICS = ICS
         self.HAL = HAL
         self.Logger = Logger
         self.serverName = 'Niradock'
        
-    def _SetupServer(self):
+    def SetupServer(self):
         self.server = QLocalServer(self)
 
         QLocalServer.removeServer(self.serverName)
@@ -34,6 +34,7 @@ class SockServer(QWidget):
         if soket:
             soket.readyRead.connect(lambda:self.processCommand(soket))
             soket.disconnected.connect(soket.deleteLater)
+
     def processCommand(self,socket):
         data = socket.readAll().data().decode().strip()
         command,IC = data.split('_')
@@ -43,23 +44,22 @@ class SockServer(QWidget):
             self.hideWindow(IC)
     def unhideWindow(self,IC):
         try:
-            clid = self.ICS[IC]
-            idActiveWorkspace = json.loads(self.HAL.hyprctl.send(b'j/activeworkspace'))['id']
-            unhide = f'dispatch movetoworkspacesilent {idActiveWorkspace},address:{clid}'
-            setActive = f'dispatch focuswindow address:{clid}'
+            ID = self.ICS[IC]
+            idActiveWorkspace = json.loads(self.HAL.HyprCtl.Send(b'j/activeworkspace'))['id']
 
-            self.HAL.hyprctl.send(bytes(unhide,'utf-8'))
-            self.HAL.hyprctl.send(bytes(setActive,'utf-8'))
+            self.HAL.MoveToWorkspace(idActiveWorkspace,ID)
+            self.HAL.SetClientActive(ID)
+        except KeyError:
+            self.Logger.Error("Panel isn't exists:",False)
         except Exception as e:
-            self.Logger.Error("Menu isn't exists:"+str(e),False)
+            self.Logger.Error(str(e),False)
             
     def hideWindow(self,IC):
         try:
-            print(self.ICS)
-            print(IC)
-            clid = self.ICS[IC]
-            hide = f'dispatch movetoworkspacesilent 99,address:{clid}'
-            self.HAL.hyprctl.send(bytes(hide,'utf-8'))
+            ID = self.ICS[IC]
+            self.HAL.MoveToWorkspace(ID)
+        except KeyError:
+            self.Logger.Error("Panel isn't exists:",False)
         except Exception as e:
-            self.Logger.Error("Menu isn't exists:"+str(e),False)
+            self.Logger.Error(str(e),False)
     

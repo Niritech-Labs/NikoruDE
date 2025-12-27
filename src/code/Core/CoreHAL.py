@@ -7,23 +7,24 @@ import subprocess
 from pathlib import Path 
 import threading
 import socket
+from typing import Callable
 import sys,os
 sys.path.insert(0,os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import configparser
 from PySide6.QtCore import Signal,QObject
 
-from Utils.NLUtils import NLLogger,ConColors
+from NLUtils.Logger import NLLogger,ConColors
 
 
 
 class HyprSocketEvent:
-    def __init__(self, socket_path):
-        self.socket_path = socket_path
+    def __init__(self, socketPath:str):
+        self.socketPath = socketPath
         self.sock = None
         self.connected = False
         self.running = False
         self.thread = None
-        self.handlers = {}
+        self.eventHandlers = {}
         
     def start(self):
         if self.connected:
@@ -31,15 +32,14 @@ class HyprSocketEvent:
             
         try:
             self.sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-            self.sock.connect(self.socket_path)
+            self.sock.connect(self.socketPath)
             self.connected = True
         except Exception as e:
             print(f"Connection error: {e}")
             return
         
-        # Нет автоматической подписки - сокет сразу начинает получать события
         self.running = True
-        self.thread = threading.Thread(target=self._listen)
+        self.thread = threading.Thread(target=self.listen)
         self.thread.daemon = True
         self.thread.start()
 
@@ -59,14 +59,14 @@ class HyprSocketEvent:
         self.sock = None
         self.connected = False
 
-    def bind(self, event_type, callback):
-        if event_type not in self.handlers:
-            self.handlers[event_type] = []
+    def Bind(self, eventType:str, callback:Callable[[str],None]):
+        if eventType not in self.eventHandlers:
+            self.eventHandlers[eventType] = []
             
-        if callback not in self.handlers[event_type]:
-            self.handlers[event_type].append(callback)
+        if callback not in self.eventHandlers[eventType]:
+            self.eventHandlers[eventType].append(callback)
 
-    def _listen(self):
+    def listen(self):
         """Поток чтения событий из сокета"""
         buffer = b""
         while self.running:
@@ -79,25 +79,25 @@ class HyprSocketEvent:
                 while b"\n" in buffer:
                     # Разделяем по символу новой строки
                     line, buffer = buffer.split(b"\n", 1)
-                    self._process_event(line.strip())
+                    self.eventProcessing(line.strip())
             except:
                 if self.running:
                     break
 
-    def _process_event(self, raw_data):
+    def eventProcessing(self, EVENT_MESSAGE:bytes):
         """Обработка сырого события в формате 'event>>data'"""
         try:
-            # Разделяем данные по '>>' (два символа '>')
-            if b">>" not in raw_data:
+            if b">>" not in EVENT_MESSAGE:
                 return
                 
-            event_type, event_data = raw_data.split(b">>", 1)
-            event_type_str = event_type.decode('utf-8', errors='ignore')
+            eventMessage = EVENT_MESSAGE.decode('utf-8', errors='ignore')
+            eventType, event_data = eventMessage.split(">>", 1)
+            
             
             # Вызываем все обработчики для этого типа события
-            if event_type_str in self.handlers:
-                for callback in self.handlers[event_type_str]:
-                    callback(event_type + b">>" + event_data)
+            if eventType in self.eventHandlers:
+                for callback in self.eventHandlers[eventType]:
+                    callback(eventType + ">>" + event_data)
         except:
             pass
    
@@ -109,9 +109,9 @@ class HyprSocketCtl:
         self.lock = threading.Lock()
         self.response_timeout = 2
 
-    def send(self, command, waitAnswer=True):
+    def Send(self, command:bytes, waitAnswer=True):
         with self.lock:
-            #соединение создаем временное
+            
             tempSock = None
             
             try:
@@ -172,89 +172,55 @@ class HyprAL:
     def __init__(self, debug=False, CAL= None,SServer = None):
         #debug
         
-        self.CAL= CAL
-        self.SServer = SServer
+        self.CAL=CAL
+        self.SServer=SServer
         
 
         #paths
         
-        XDG = os.environ.get("XDG_RUNTIME_DIR")
+        XDGRD = os.environ.get("XDG_RUNTIME_DIR")
         SIG = os.environ.get("HYPRLAND_INSTANCE_SIGNATURE")
-        SOCK = os.path.join(XDG,"hypr",SIG,".socket.sock")
-        SOCK2 = os.path.join(XDG,"hypr",SIG,".socket2.sock")
+        SOCK = os.path.join(XDGRD,"hypr",SIG,".socket.sock")
+        SOCK2 = os.path.join(XDGRD,"hypr",SIG,".socket2.sock")
 
         #init sockets
-        self.hyprctl = HyprSocketCtl(SOCK)
-        self.hyprEvent = HyprSocketEvent(SOCK2)
+        self.HyprCtl = HyprSocketCtl(SOCK)
+        self.HyprEvent = HyprSocketEvent(SOCK2)
 
 
         
-
-        
+    def HideClient(self,ID:str):
+        command = bytes(f'dispatch movetoworkspacesilent 99,address:{ID}','utf-8')
+        self.HyprCtl.Send(command)
+    
+    def MoveToWorkspace(self,workspace:int,ID:str):
+        command = bytes(f'dispatch movetoworkspacesilent {workspace},address:{ID}','utf-8')
+        self.HyprCtl.Send(command)
+    
+    def SetClientActive(self,ID:str):
+        command = bytes(f'dispatch focuswindow address:{ID}','utf-8')
+        self.HyprCtl.Send(command)
         
         
 
     def GetClients(self):
-        return json.loads(self.hyprctl.send(b"j/clients",waitAnswer=True))
+        return json.loads(self.HyprCtl.Send(b"j/clients",waitAnswer=True))
           
-    def _getClientPath(self,pid):
-        try: return os.readlink(f'/proc/{pid}/exe')
-        except Exception as e: print('\033[33mGet path error:\033[0m',e); return None
-
-   
-
-    def _getName(self,Iclass:str):
-        if '.' in Iclass:
-            return Iclass.split('.')[-1]
-        if '_' in Iclass:
-            return Iclass.split('_')[-1]
     
-        return Iclass
-    
-    def GetClient(self,id):
+    def GetClient(self,ID:str)->dict:
         clients = self.GetClients()
         for client in clients:
-            if client["address"] == id:
+            if client["address"] == ID:
                 return client
         return None
 
-    def _getAppData(self,AppPath):
-        """Парсит .desktop файл и возвращает имя и иконку"""
-        if not Path(AppPath).exists():
-            return '',''
-
-        config = configparser.ConfigParser()
-        # Сохраняем регистр ключей
-        config.optionxform = lambda option: option  
-
-        try:
-            config.read(AppPath, encoding='utf-8')
-        except Exception:
-            return '',''
-
-        if 'Desktop Entry' not in config:
-            return '',''
-
-        entry = config['Desktop Entry']
-
-        # Извлекаем имя с учетом локализации
-        currentLang = os.getenv('LANG', 'en_US.UTF-8').split('_')[0]
-        lcName = f'Name[{currentLang}]'
-    
-        title = entry.get(lcName) or entry.get('Name', '')
-
-        # Извлекаем имя иконки (без пути)
-        icon = entry.get('Icon', '').strip()
-
-        return title,icon
 
 
-    def RunProcess(self,cmd):    
-        # Popen запускает процесс в фоне
+    def RunProcess(self,command:list):    
         subprocess.Popen(
-            cmd,
-            start_new_session=True,  # Не зависит от родительского процесса
-            stdout=subprocess.DEVNULL,  # Перенаправляем вывод в никуда
+            command,
+            start_new_session=True, 
+            stdout=subprocess.DEVNULL, 
             stderr=subprocess.DEVNULL
         )
 

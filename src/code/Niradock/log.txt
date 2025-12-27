@@ -1,0 +1,122 @@
+
+[desk@localhost main]$ /usr/bin/python /home/desk/NiraLinux-project/Nikoru/main/src/code/Niradock/test-dock.py
+1. Подключаемся к Wayland...
+  Глобальный объект: wl_seat версия 9
+  Глобальный объект: wl_data_device_manager версия 3
+  Глобальный объект: wl_compositor версия 6
+  Глобальный объект: wl_subcompositor версия 1
+  Глобальный объект: wl_shm версия 1
+  Глобальный объект: wp_viewporter версия 1
+  Глобальный объект: wp_tearing_control_manager_v1 версия 1
+  Глобальный объект: wp_fractional_scale_manager_v1 версия 1
+  Глобальный объект: zxdg_output_manager_v1 версия 3
+  Глобальный объект: wp_cursor_shape_manager_v1 версия 1
+  Глобальный объект: zwp_idle_inhibit_manager_v1 версия 1
+  Глобальный объект: zwp_relative_pointer_manager_v1 версия 1
+  Глобальный объект: zxdg_decoration_manager_v1 версия 1
+  Глобальный объект: wp_alpha_modifier_v1 версия 1
+  Глобальный объект: zwlr_gamma_control_manager_v1 версия 1
+  Глобальный объект: ext_foreign_toplevel_list_v1 версия 1
+  Глобальный объект: zwp_pointer_gestures_v1 версия 3
+  Глобальный объект: zwlr_foreign_toplevel_manager_v1 версия 3
+  Глобальный объект: zwp_keyboard_shortcuts_inhibit_manager_v1 версия 1
+  Глобальный объект: zwp_text_input_manager_v1 версия 1
+  Глобальный объект: zwp_text_input_manager_v3 версия 1
+  Глобальный объект: zwp_pointer_constraints_v1 версия 1
+  Глобальный объект: zwlr_output_power_manager_v1 версия 1
+  Глобальный объект: xdg_activation_v1 версия 1
+  Глобальный объект: ext_idle_notifier_v1 версия 2
+  Глобальный объект: hyprland_lock_notifier_v1 версия 1
+  Глобальный объект: ext_session_lock_manager_v1 версия 1
+  Глобальный объект: zwp_input_method_manager_v2 версия 1
+  Глобальный объект: zwp_virtual_keyboard_manager_v1 версия 1
+  Глобальный объект: zwlr_virtual_pointer_manager_v1 версия 2
+  Глобальный объект: zwlr_output_manager_v1 версия 4
+  Глобальный объект: org_kde_kwin_server_decoration_manager версия 1
+  Глобальный объект: hyprland_focus_grab_manager_v1 версия 1
+  Глобальный объект: zwp_tablet_manager_v2 версия 1
+  Глобальный объект: zwlr_layer_shell_v1 версия 5
+  Глобальный объект: wp_presentation версия 2
+  Глобальный объект: xdg_wm_base версия 7
+  Глобальный объект: zwlr_data_control_manager_v1 версия 2
+  Глобальный объект: zwp_primary_selection_device_manager_v1 версия 1
+  Глобальный объект: xwayland_shell_v1 версия 1
+  Глобальный объект: zwlr_screencopy_manager_v1 версия 3
+  Глобальный объект: hyprland_toplevel_export_manager_v1 версия 2
+  Глобальный объект: hyprland_toplevel_mapping_manager_v1 версия 1
+  Глобальный объект: hyprland_global_shortcuts_manager_v1 версия 1
+  Глобальный объект: xdg_wm_dialog_v1 версия 1
+  Глобальный объект: wp_single_pixel_buffer_manager_v1 версия 1
+  Глобальный объект: wp_security_context_manager_v1 версия 1
+  Глобальный объект: hyprland_ctm_control_manager_v1 версия 2
+  Глобальный объект: hyprland_surface_manager_v1 версия 2
+  Глобальный объект: wp_content_type_manager_v1 версия 1
+  Глобальный объект: xdg_toplevel_tag_manager_v1 версия 1
+  Глобальный объект: xdg_system_bell_v1 версия 1
+  Глобальный объект: ext_workspace_manager_v1 версия 1
+  Глобальный объект: ext_data_control_manager_v1 версия 1
+  Глобальный объект: wp_pointer_warp_v1 версия 1
+  Глобальный объект: wp_color_manager_v1 версия 1
+  Глобальный объект: wp_drm_lease_device_v1 версия 1
+  Глобальный объект: wp_linux_drm_syncobj_manager_v1 версия 1
+  Глобальный объект: wl_drm версия 2
+  Глобальный объект: zwp_linux_dmabuf_v1 версия 5
+  Глобальный объект: wl_output версия 4
+2. Создаём Wayland поверхность...
+3. Создаём layer surface...
+  Конфигурация: 1920x100
+4. Инициализируем Qt виджеты...
+5. Инициализируем нативный рендерер...
+
+============================================================
+Запускаем POC: Qt + Wayland Layer Shell
+============================================================
+Traceback (most recent call last):
+  File "/home/desk/NiraLinux-project/Nikoru/main/src/code/Niradock/test-dock.py", line 231, in <lambda>
+    wayland_timer.timeout.connect(lambda: self.display.dispatch(blocking=False))
+                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/desk/.local/lib/python3.12/site-packages/pywayland/utils.py", line 30, in wrapper
+    return func(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: Display.dispatch() got an unexpected keyword argument 'blocking'
+
+Кадр #1
+  Ошибка: You need a shiboken-based type.
+Traceback (most recent call last):
+  File "/home/desk/NiraLinux-project/Nikoru/main/src/code/Niradock/test-dock.py", line 164, in update_frame
+    widget_ptr = shiboken6.getCppPointer(self.root_widget)[0]
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: You need a shiboken-based type.
+
+Очистка: уничтожаем 0 буферов...
+
+Очистка: уничтожаем 0 буферов...
+
+Критическая ошибка: ZwlrLayerSurfaceV1Proxy object has been destroyed
+Traceback (most recent call last):
+  File "/home/desk/NiraLinux-project/Nikoru/main/src/code/Niradock/test-dock.py", line 245, in <module>
+    panel.run()
+  File "/home/desk/NiraLinux-project/Nikoru/main/src/code/Niradock/test-dock.py", line 238, in run
+    self.cleanup()
+  File "/home/desk/NiraLinux-project/Nikoru/main/src/code/Niradock/test-dock.py", line 212, in cleanup
+    self.layer_surface.destroy()
+  File "/home/desk/NiraLinux-project/Nikoru/main/src/code/Protocols/wlr_layer_shell_unstable_v1/zwlr_layer_surface_v1.py", line 301, in destroy
+    self._marshal(7)
+  File "/home/desk/.local/lib/python3.12/site-packages/pywayland/utils.py", line 29, in wrapper
+    raise ValueError(f"{self.__class__.__name__} object has been destroyed")
+ValueError: ZwlrLayerSurfaceV1Proxy object has been destroyed
+Segmentation fault (core dumped)
+[desk@localhost main]$ firefox
+Error: Failed to open Wayland display, fallback to X11. WAYLAND_DISPLAY='wayland-1' DISPLAY=':0'
+Crash Annotation GraphicsCriticalError: |[0][GFX1-]: glxtest: Could not connect to wayland display, WAYLAND_DISPLAY=(null) (t=0.656522) [GFX1-]: glxtest: Could not connect to wayland display, WAYLAND_DISPLAY=(null)
+[Child 14038, MediaDecoderStateMachine #1] WARNING: Decoder=7f182acf8100 state=DECODING_METADATA Decode metadata failed, shutting down decoder: file /builddir/build/BUILD/firefox-140.3.0/dom/media/MediaDecoderStateMachine.cpp:371
+[Child 14038, MediaDecoderStateMachine #1] WARNING: Decoder=7f182acf8100 Decode error: NS_ERROR_DOM_MEDIA_METADATA_ERR (0x806e0006): file /builddir/build/BUILD/firefox-140.3.0/dom/media/MediaDecoderStateMachineBase.cpp:168
+[Child 14038, MediaDecoderStateMachine #1] WARNING: Decoder=7f182acf9600 Decode error: NS_ERROR_DOM_MEDIA_FATAL_ERR (0x806e0005) - mozilla::MediaResult mozilla::FFmpegDataDecoder<61>::InitSWDecoder(AVDictionary**): Couldn't open avcodec: file /builddir/build/BUILD/firefox-140.3.0/dom/media/MediaDecoderStateMachineBase.cpp:168
+^CCrash Annotation GraphicsCriticalError: |[C0][GFX1-]: CompositorBridgeChild receives IPC close with reason=AbnormalShutdown (t=53.9636) [GFX1-]: CompositorBridgeChild receives IPC close with reason=AbnormalShutdown
+Exiting due to channel error.
+Exiting due to channel error.
+Exiting due to channel error.
+
+Crash Annotation GraphicsCriticalError: |[C0][GFX1-]: CompositorBridgeChild receives IPC close with reason=AbnormalShutdown (t=57.4264) [GFX1-]: CompositorBridgeChild receives IPC close with reason=AbnormalShutdown
+Exiting due to channel error.
+[desk@localhost main]$ 

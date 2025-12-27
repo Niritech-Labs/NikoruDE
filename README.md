@@ -14,21 +14,21 @@ Nikoru Desktop Environment это open-source окружение рабочег�
 чтобы установить DE выполните: 
 ```bash
 git clone https://github.com/Niritech-Labs/NikoruDE.git
-cd NikoruDE
-sudo python3 install.py
+cd Nikoru
+make all
+sudo make install
 ```
 чтобы удалить выполните 
 ```bash
-sudo python3 uninstall.py
+sudo make uninstall
 ```
 
 ## Требования
-- Hyprland ≥ 0.46.0
+- Hyprland ≥ 0.49.0
 - Python ≥ 3.10
-- PySide6 
-- NetworkManager 
-- ModemManager 
-  
+- python3-pyside6
+- python3-nlutils ≥ 0.0.1
+
 ---
 
 # EN
@@ -46,19 +46,19 @@ This software is distributed under the [GPL-3.0](LICENSE) license.
 to install DE run: 
 ```bash
 git clone https://github.com/Niritech-Labs/NikoruDE.git
-cd NikoruDE 
-sudo python3 install.py
+cd Nikoru 
+make all
+sudo make install
 ```
 to uninstall run 
 ```bash
-sudo python3 uninstall.py
+sudo make uninstall
 ```
 
 ## Requirements
-- Hyprland ≥ 0.46.0
+- Hyprland ≥ 0.49.0
 - Python ≥ 3.10
-- PySide6 
-- NetworkManager 
-- ModemManager
+- python3-pyside6
+- python3-nlutils ≥ 0.0.1
 
 

@@ -16,8 +16,8 @@ class PowerMenu(MenuBase):
             QSizePolicy.Policy.Fixed
         )
         self.QObjects = {}
-        self.menuSetup()
-    def menuSetup(self):
+        self.MenuSetup()
+    def MenuSetup(self):
         self.User = QWidget()
         self.User.setObjectName('PowerUserBackground')
         self.rootLayout.addWidget(self.User)

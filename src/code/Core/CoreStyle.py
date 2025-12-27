@@ -3,7 +3,8 @@ sys.path.insert(0,os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import subprocess 
 import configparser
 import shutil
-from Utils.NLUtils import NLLogger,ConfigManager,ConColors
+from NLUtils.Logger import NLLogger,ConColors
+from NLUtils.JSONUtils import ConfigManager
 
 
 C_NIKORU_THEME_NAME = 'NikoruBase'
