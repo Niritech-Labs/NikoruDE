@@ -4,7 +4,7 @@
 # the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 import sys, os
 sys.path.insert(0,os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
-from Utils.NLUtils import NLLogger,ConColors
+from NLUtils.Logger import NLLogger,ConColors
 from pathlib import Path
 
 class NSClientRules():

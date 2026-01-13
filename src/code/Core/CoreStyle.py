@@ -5,11 +5,10 @@ import configparser
 import shutil
 from NLUtils.Logger import NLLogger,ConColors
 from NLUtils.JSONUtils import ConfigManager
+from Globals import *
 
 
-C_NIKORU_THEME_NAME = 'NikoruBase'
-C_ICON_SIZES = ['32x32','16x16','64x64','48x48','128x128','scalable','pixmap']
-C_PRODUCTION = False
+
 class ClientDesktopFileManager:
 	def __init__(self):
 		self.LOG = NLLogger(C_PRODUCTION,"CDFM")
@@ -214,22 +213,18 @@ class UpdateCache:
 			
 			
 class NikoruThemeManager:
-	def __init__(self,themeSettingsBlock: dict,production: bool):
+	def __init__(self,themeName: dict,production: bool):
 		self.LOG = NLLogger(production,"ThemeManager")
 		self.CM = ConfigManager('',production)
 
-		self.themeSettingsBlock = themeSettingsBlock
 
-		self.systemThemeName = self.themeSettingsBlock['system']
-		if not self.themeSettingsBlock['user'] == '':
-			self.currentThemeName = self.themeSettingsBlock['user']
-		else:
-			self.currentThemeName = self.themeSettingsBlock['system']
+		
+		self.currentThemeName = themeName
 		self.loadTheme(self.currentThemeName)
 
 	def loadTheme(self,themeName):
 		try:
-			if not self.themeSettingsBlock['user'] == None:
+			if os.path.exists(f"/usr/share/Nikoru/Other/Themes/{themeName}/{themeName}.ntc"):
 				return self.CM.OpenRestricted(f"/usr/share/Nikoru/Other/Themes/{themeName}/{themeName}.ntc")
 			else:
 				return self.CM.OpenRestricted(f"~/.local/share/nikoru/themes/{themeName}/{themeName}.ntc")

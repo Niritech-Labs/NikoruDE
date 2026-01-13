@@ -4,7 +4,7 @@
 # the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 
 from PySide6.QtCore import Qt, QSize, QPropertyAnimation, QEasingCurve,QPoint,QEvent,QTimer,QLocale,QDateTime,Signal
-from PySide6.QtWidgets import QWidget, QPushButton,QHBoxLayout, QScrollArea, QSizePolicy, QSpacerItem, QToolTip
+from PySide6.QtWidgets import QWidget, QPushButton,QHBoxLayout, QScrollArea, QSizePolicy, QSpacerItem, QToolTip,QMenu
 from PySide6.QtGui import QIcon
 
 from Core.CoreHAL import HyprAL,WorkspacesHAL
@@ -259,14 +259,15 @@ class DockClientGroup(QPushButton):
         self.setObjectName('DockClients')
         self.setStyleSheet(self.Theme["main"])
 
-    def nameToltip(self):
-        QToolTip.showText(self.mapToGlobal(self.rect().bottomLeft),self.title)
+    
 
     def rightClick(self, pos):
         pos = self.mapToGlobal(QPoint(0,-40))
-        panel = ['/bin/python','/usr/share/NikoruDE/Code/Menus/Nikoru@AppMenu.py',str(pos.x()),str(pos.y()),"D"] + ['New','HelloWorld']
-        comand = subprocess.run(panel,capture_output=True,text=True,encoding='utf-8',errors='ignore')
-        print(comand.stdout.strip())
+        menu = QMenu(self)
+        menu.addAction('help')
+        menu.exec()
+        
+        
         
     def leftClick(self):
         if self.IDDB == [] and self.pinState:
@@ -317,7 +318,6 @@ class DockClientGroup(QPushButton):
  
     def event(self, e):
         if e.type() == QEvent.ToolTip:
-            QToolTip.showText(self.mapToGlobal(QPoint(-30,-50)),self.toolTip(),self)
             return True
         return super().event(e)
 

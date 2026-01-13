@@ -3,33 +3,43 @@
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 import sys,os
+import shiboken6
 sys.path.insert(0,os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QApplication, QMainWindow, QWidget,QPushButton,QHBoxLayout
+from PySide6.QtWidgets import QApplication,QWidget,QPushButton,QHBoxLayout
 
 from Core.CoreHAL import HyprAL
 from Core.CoreStyle import NikoruThemeManager
-from Utils.NLUtils import NLLogger, ConColors
+from NLUtils.Logger import NLLogger, ConColors
+from PySide6.QtGui import QWindow
 from Settings.SettingsBackend import SettingsBackend
 from Niradock.Modules.DockPanelWidgets import DockSettings,DockTime,DockScrollClientArea,DockSVG,DockTerminal,DockInternet,DockPower,DockWorkspaces
 from Niradock.Modules.ClientManager import ClientAgregator
+from NLQGBackends import WlrLayerShellBackend
+from NLUtils.BlocksUtils import Blocks
+from Globals import *
 
 
-class DockPanel(QMainWindow):
+class DockPanel(WlrLayerShellBackend):
     """Док панель,здесь вы найдёте Нириса в качестве пасхалки"""
     def __init__(self,HyprlandAbstractionlayer:HyprAL):
-        super().__init__()
+        super().__init__(False,ExclusiveZone=40)
         #constants
         self.C_STD_ICON_SIZE = [30,40]
-        self.C_PRODUCTION = False
+        self.C_PRODUCTION = C_PRODUCTION
+        
         ########################### LOGGER INIT ###########################
         self.LOG = NLLogger(False,"DockPanel")
         self.LOG.Info("started",ConColors.B,False)
         ###################################################################
         # Settings init/load theme/load lang
-        self.ABConfig = SettingsBackend.GetConfig()
+        self.ABConfig:Blocks = SettingsBackend.GetConfig()
+        Theme = self.ABConfig.FindBlock('Theme')
+        if not Theme:
+            self.LOG.Error('Broken System Settings',True)
+        CT = Theme[0].FindParam('current-theme')[0][1]
         # Load Theme
-        self.ThemeManager = NikoruThemeManager(self.ABConfig['system-style'],self.C_PRODUCTION)
+        self.ThemeManager = NikoruThemeManager(CT,self.C_PRODUCTION)
         self.theme = self.ThemeManager.GetTheme()
         #init Hyprald Abstraction Layer
         self.HAL = HyprlandAbstractionlayer
@@ -143,7 +153,8 @@ class DockPanel(QMainWindow):
         currentHeight = self.height()
         self.updateGeometry(currentHeight)
 
+
 App = QApplication(sys.argv)
 Panel = DockPanel(HyprAL())
-Panel.show()
+Panel.Show()
 sys.exit(App.exec())
