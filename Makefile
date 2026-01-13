@@ -9,7 +9,7 @@ SHARE_BASE := $(DESTDIR)$(PREFIX)/share/$(NAME)
 
 MAIN_FILE  := Code/Niradock/Nikoru-DockPanel.py
 
-DEPS = PySide6:PySide6 NLUtils:https://github.com/Niritech-Labs/Niritech-Labs-Utils/releases/download/v0.0.1/nlutils-0.0.1-py3-none-any.whl
+DEPS = PySide6:PySide6 NLUtils:NLOrg-Utils
 
 	
 
